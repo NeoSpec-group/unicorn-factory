@@ -99,7 +99,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     .from('projects')
     .insert({
       user_id: user.id,
-      status: 'idea_submitted',
+      status: 'intake',
       idea_text: ideaText.trim(),
     })
     .select('id')

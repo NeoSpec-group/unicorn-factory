@@ -22,7 +22,9 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const { error } = await getServiceSupabase().from('email_leads').insert({ email: email.trim() });
 
-  if (error) {
+  // 23505 = unique_violation: the email is already captured. Lead capture is
+  // idempotent, so a duplicate is a success, not an error.
+  if (error && error.code !== '23505') {
     console.error('[POST /api/leads] Supabase error:', error.message);
     return Response.json(
       { error: 'Failed to save email. Please try again.' } satisfies ApiError,

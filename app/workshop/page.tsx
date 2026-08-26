@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { QuestionsResponse, SubmitAnswersResponse } from '@/types';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import ErrorBanner from '@/components/ui/ErrorBanner';
 import Spinner from '@/components/ui/Spinner';
 import Card from '@/components/ui/Card';
+import JourneyTracker from '@/components/JourneyTracker';
 
 export default function QuestionsPage() {
   const router = useRouter();
@@ -21,7 +23,7 @@ export default function QuestionsPage() {
     async function fetchQuestions() {
       const projectId = sessionStorage.getItem('uf_project_id');
       if (!projectId) {
-        router.push('/idea');
+        router.push('/intake');
         return;
       }
       try {
@@ -58,7 +60,7 @@ export default function QuestionsPage() {
   async function handleSubmit() {
     const projectId = sessionStorage.getItem('uf_project_id');
     if (!projectId) {
-      router.push('/idea');
+      router.push('/intake');
       return;
     }
     setError(null);
@@ -82,7 +84,7 @@ export default function QuestionsPage() {
       }
       const data = (await res.json()) as SubmitAnswersResponse;
       if (data.success) {
-        router.push('/research');
+        router.push('/blueprint');
       }
     } catch {
       setError('Network error. Please try again.');
@@ -106,14 +108,16 @@ export default function QuestionsPage() {
     <div className="flex min-h-screen flex-col items-center justify-start bg-gray-50 px-4 py-16">
       <div className="w-full max-w-xl">
         <div className="mb-8 text-center">
-          <a href="/" className="text-xl font-bold text-indigo-600">
-            Unicorn Factory
-          </a>
+          <Link href="/" className="text-xl font-bold text-indigo-600">Unicorn Factory</Link>
         </div>
 
+        <JourneyTracker status="intake" className="mb-8" />
+
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">A few quick questions</h1>
-          <p className="mt-1 text-sm text-gray-500">Help us understand your idea better.</p>
+          <h1 className="text-2xl font-bold text-gray-900">The Workshop</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Let&apos;s shape your idea together — a few quick questions.
+          </p>
         </div>
 
         <ErrorBanner message={error} />

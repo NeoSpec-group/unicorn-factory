@@ -40,6 +40,15 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
     ideaText: typedProject.idea_text,
     clarifyingQuestions: typedProject.clarifying_questions,
     outputs: typedProject.outputs,
+    estimate: {
+      tier: typedProject.tier,
+      low: typedProject.estimate_low,
+      high: typedProject.estimate_high,
+      firmPrice: typedProject.firm_price,
+    },
+    paidAt: typedProject.paid_at,
+    repoUrl: typedProject.repo_url,
+    stagingUrl: typedProject.staging_url,
     createdAt: typedProject.created_at,
     updatedAt: typedProject.updated_at,
   };

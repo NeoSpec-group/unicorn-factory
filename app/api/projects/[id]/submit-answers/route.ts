@@ -1,10 +1,14 @@
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { assertProjectStatus } from '@/lib/state-machine';
+import { TIER_BANDS } from '@/types';
 import type {
   SubmitAnswersRequest,
   SubmitAnswersResponse,
   Project,
+  ProjectOutputs,
+  BlueprintOutputs,
+  Tier,
   ApiError,
 } from '@/types';
 
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
 
   // State guard
   try {
-    assertProjectStatus(typedProject.status, 'idea_submitted');
+    assertProjectStatus(typedProject.status, 'intake');
   } catch (err) {
     return Response.json(
       { error: err instanceof Error ? err.message : 'Invalid state.' } satisfies ApiError,
@@ -78,12 +82,31 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     );
   }
 
-  // Save answers and advance state
+  // Generate the Blueprint + estimate.
+  // M1 SKELETON: placeholder content + default 'standard' tier. M2 replaces this
+  // with real LLM-generated refined idea/roadmap and an AI-classified tier.
+  const blueprint: BlueprintOutputs = {
+    refinedIdea: typedProject.idea_text,
+    roadmap: [
+      { title: 'Core flow', detail: 'The primary end-to-end journey your product delivers.' },
+      { title: 'Accounts & data', detail: 'Authentication and persistence for your users.' },
+      { title: 'Polish & ship', detail: 'A clean, deployable MVP wired to your accounts.' },
+    ],
+  };
+  const tier: Tier = 'standard';
+  const existingOutputs: ProjectOutputs = (typedProject.outputs as ProjectOutputs) ?? {};
+  const updatedOutputs: ProjectOutputs = { ...existingOutputs, blueprint };
+
+  // Save answers, blueprint, estimate, and advance state.
   const { error: updateError } = await supabase
     .from('projects')
     .update({
       clarifying_questions: answers,
-      status: 'questions_answered',
+      outputs: updatedOutputs,
+      tier,
+      estimate_low: TIER_BANDS[tier].low,
+      estimate_high: TIER_BANDS[tier].high,
+      status: 'blueprint_ready',
     })
     .eq('id', id);
 
@@ -95,6 +118,6 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     );
   }
 
-  const responseBody: SubmitAnswersResponse = { success: true, nextStatus: 'questions_answered' };
+  const responseBody: SubmitAnswersResponse = { success: true, nextStatus: 'blueprint_ready' };
   return Response.json(responseBody, { status: 200 });
 }

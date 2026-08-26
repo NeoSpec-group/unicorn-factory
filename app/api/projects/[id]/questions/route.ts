@@ -90,7 +90,7 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
   }
 
   // Normalise: cap at 3, pad with default if under 1
-  let questions = questionsResult.questions.slice(0, 3);
+  const questions = questionsResult.questions.slice(0, 3);
   while (questions.length < 1) {
     questions.push(DEFAULT_QUESTION);
   }

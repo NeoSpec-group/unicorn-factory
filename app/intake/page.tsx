@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { CreateProjectResponse } from '@/types';
 import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
@@ -48,7 +49,7 @@ export default function IdeaPage() {
 
       // Accept path
       sessionStorage.setItem('uf_project_id', data.projectId);
-      router.push('/questions');
+      router.push('/workshop');
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -64,9 +65,7 @@ export default function IdeaPage() {
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <a href="/" className="text-xl font-bold text-indigo-600">
-            Unicorn Factory
-          </a>
+          <Link href="/" className="text-xl font-bold text-indigo-600">Unicorn Factory</Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">

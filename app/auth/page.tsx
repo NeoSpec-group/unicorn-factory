@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { getRouteForStatus } from '@/types';
 import type { ProjectStatus } from '@/types';
@@ -52,10 +53,10 @@ export default function AuthPage() {
         sessionStorage.setItem('uf_project_id', project.id);
         router.push(getRouteForStatus(project.status));
       } else {
-        router.push('/idea');
+        router.push('/intake');
       }
     } catch {
-      router.push('/idea');
+      router.push('/intake');
     }
   }
 
@@ -77,7 +78,7 @@ export default function AuthPage() {
           setError(signUpError.message);
           return;
         }
-        router.push('/idea');
+        router.push('/intake');
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -90,7 +91,7 @@ export default function AuthPage() {
         if (data.session) {
           await redirectByProjectStatus(data.session.access_token);
         } else {
-          router.push('/idea');
+          router.push('/intake');
         }
       }
     } catch {
@@ -113,9 +114,7 @@ export default function AuthPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <a href="/" className="text-2xl font-bold text-indigo-600">
-            Unicorn Factory
-          </a>
+          <Link href="/" className="text-2xl font-bold text-indigo-600">Unicorn Factory</Link>
           <p className="mt-1 text-sm text-gray-500">Your autonomous MVP builder</p>
         </div>
 
@@ -187,9 +186,7 @@ export default function AuthPage() {
         </div>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          <a href="/" className="text-indigo-600 hover:underline">
-            Back to home
-          </a>
+          <Link href="/" className="text-indigo-600 hover:underline">Back to home</Link>
         </p>
       </div>
     </div>
