@@ -20,6 +20,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
   // On mount: check if user is already authenticated
@@ -70,7 +71,7 @@ export default function AuthPage() {
     try {
       const supabase = createClient();
       if (activeTab === 'sign-up') {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
         });
@@ -78,7 +79,16 @@ export default function AuthPage() {
           setError(signUpError.message);
           return;
         }
-        router.push('/intake');
+        if (data.session) {
+          // Email confirmation is off — we're signed in immediately.
+          router.push('/intake');
+        } else {
+          // Email confirmation is on — no session yet. Guide the user.
+          setNotice(
+            'Account created. Confirm your email, then sign in. (For local testing, disable email confirmation in Supabase → Authentication.)',
+          );
+          setActiveTab('sign-in');
+        }
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -128,6 +138,7 @@ export default function AuthPage() {
                 onClick={() => {
                   setActiveTab(tab);
                   setError(null);
+                  setNotice(null);
                 }}
                 className={[
                   'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
@@ -167,6 +178,12 @@ export default function AuthPage() {
                 disabled={loading}
               />
             </div>
+
+            {notice && (
+              <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800">
+                {notice}
+              </div>
+            )}
 
             <ErrorBanner message={error} />
 
