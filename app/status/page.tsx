@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { ProjectResponse, ProjectStatus } from '@/types';
+import type { ProjectResponse, ProjectStatus, CheckoutResponse } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Spinner from '@/components/ui/Spinner';
@@ -18,9 +18,14 @@ export default function StatusPage() {
   const router = useRouter();
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [justPaid, setJustPaid] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setJustPaid(new URLSearchParams(window.location.search).get('paid') === '1');
+    }
     async function fetchProject() {
       const projectId = sessionStorage.getItem('uf_project_id');
       if (!projectId) {
@@ -45,6 +50,31 @@ export default function StatusPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function handlePay() {
+    const projectId = sessionStorage.getItem('uf_project_id');
+    if (!projectId) return;
+    setError(null);
+    setPaying(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        setError(body.error ?? 'Could not start checkout. Please try again.');
+        setPaying(false);
+        return;
+      }
+      const data = (await res.json()) as CheckoutResponse;
+      window.location.href = data.url; // redirect to Stripe Checkout
+    } catch {
+      setError('Network error. Please try again.');
+      setPaying(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -60,13 +90,24 @@ export default function StatusPage() {
           <Link href="/" className="text-xl font-bold text-indigo-600">Unicorn Factory</Link>
         </div>
 
+        {justPaid && (
+          <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-6 py-4 text-sm text-green-800 font-medium text-center">
+            Payment received — igniting your build. Your 72-hour clock is starting.
+          </div>
+        )}
+
         <ErrorBanner message={error} />
 
         {project && (
           <>
             <JourneyTracker status={project.status} className="mb-10" />
             <Card>
-              <Panel project={project} onGoto={(r) => router.push(r)} />
+              <Panel
+                project={project}
+                paying={paying}
+                onPay={handlePay}
+                onGoto={(r) => router.push(r)}
+              />
             </Card>
           </>
         )}
@@ -77,9 +118,13 @@ export default function StatusPage() {
 
 function Panel({
   project,
+  paying,
+  onPay,
   onGoto,
 }: {
   project: ProjectResponse;
+  paying: boolean;
+  onPay: () => void;
   onGoto: (route: string) => void;
 }) {
   const s: ProjectStatus = project.status;
@@ -117,8 +162,8 @@ function Panel({
             <strong className="text-gray-900">{money(project.estimate.firmPrice)}</strong>. Pay to start
             the 72-hour clock.
           </p>
-          <Button variant="primary" disabled className="py-2.5">
-            Pay &amp; ignite (coming in Ignition)
+          <Button variant="primary" onClick={onPay} disabled={paying} className="py-2.5">
+            {paying ? 'Starting checkout…' : `Pay ${money(project.estimate.firmPrice)} & ignite`}
           </Button>
         </div>
       )}
