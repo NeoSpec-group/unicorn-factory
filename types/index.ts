@@ -120,6 +120,7 @@ export interface DeliverableOutputs {
 export interface ProjectOutputs {
   blueprint?: BlueprintOutputs;
   deliverables?: DeliverableOutputs;
+  issueNote?: string; // founder-reported defect during Proving Ground (UAT)
 }
 
 export interface ClarifyingQuestionEntry {
@@ -229,6 +230,28 @@ export interface ParkResponse {
 }
 
 // ============================================================
+// API: Proving Ground → Handover → Launch (founder)
+// ============================================================
+
+export interface AcceptResponse {
+  success: boolean;
+  status: 'handover';
+}
+
+export interface ReportIssueRequest {
+  note: string;
+}
+
+export interface FinishRequest {
+  choice: 'launch' | 'managed';
+}
+
+export interface FinishResponse {
+  success: boolean;
+  status: 'launched' | 'managed';
+}
+
+// ============================================================
 // API: POST /api/projects/[id]/checkout
 // ============================================================
 
@@ -275,6 +298,7 @@ export interface OpsProjectSummary {
   firmPrice: number | null;
   repoUrl: string | null;
   stagingUrl: string | null;
+  issueNote: string | null; // founder-reported defect during Proving Ground
   createdAt: string;
   updatedAt: string;
 }

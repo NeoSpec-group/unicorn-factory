@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { getOpsUser, isOpsError } from '@/lib/ops';
 import { getServiceSupabase } from '@/lib/supabase/service';
-import type { Project, OpsProjectSummary, OpsProjectsResponse, ApiError } from '@/types';
+import type { Project, ProjectOutputs, OpsProjectSummary, OpsProjectsResponse, ApiError } from '@/types';
 
 // Ops queue: every project currently in an ops-relevant stage, across all users.
 const OPS_STAGES = ['commissioned', 'approved', 'paid', 'building', 'uat', 'handover'];
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     firmPrice: p.firm_price,
     repoUrl: p.repo_url,
     stagingUrl: p.staging_url,
+    issueNote: (p.outputs as ProjectOutputs | null)?.issueNote ?? null,
     createdAt: p.created_at,
     updatedAt: p.updated_at,
   }));

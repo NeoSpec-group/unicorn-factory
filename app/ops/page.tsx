@@ -249,10 +249,29 @@ function OpsCard({
         </div>
       )}
 
-      {(project.status === 'uat' || project.status === 'handover') && (
-        <p className="text-sm text-gray-500">
-          With the founder ({project.status}). {project.stagingUrl && `Staging: ${project.stagingUrl}`}
-        </p>
+      {project.status === 'uat' && (
+        <div className="space-y-2 border-t border-gray-100 pt-3">
+          <p className="text-sm text-gray-500">
+            In Proving Ground with the founder.{' '}
+            {project.stagingUrl && (
+              <a href={project.stagingUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">
+                staging ↗
+              </a>
+            )}
+          </p>
+          {project.issueNote && (
+            <div className="rounded bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+              <span className="font-semibold">Reported issue:</span> {project.issueNote}
+            </div>
+          )}
+          <Button variant="secondary" disabled={busy} onClick={() => run({ action: 'reforge' })} className="py-2">
+            Re-forge (revision)
+          </Button>
+        </div>
+      )}
+
+      {project.status === 'handover' && (
+        <p className="text-sm text-gray-500">With the founder (handover — awaiting their choice).</p>
       )}
     </Card>
   );

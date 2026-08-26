@@ -85,6 +85,13 @@ export const STATE_TRANSITIONS: StateTransition[] = [
     actor: 'founder',
   },
   {
+    from: 'uat',
+    to: 'building',
+    trigger: 'Ops re-forge for a reported defect (revision round)',
+    guard: 'Project status is exactly uat',
+    actor: 'ops',
+  },
+  {
     from: 'handover',
     to: 'launched',
     trigger: 'Full handover complete (accounts transferred)',

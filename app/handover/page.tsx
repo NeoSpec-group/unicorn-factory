@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ProjectResponse, DeliverableOutputs, RealityStatus } from '@/types';
+import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Spinner from '@/components/ui/Spinner';
 import ErrorBanner from '@/components/ui/ErrorBanner';
 import DeliverableCard from '@/components/DeliverableCard';
 import JourneyTracker from '@/components/JourneyTracker';
+import type { FinishRequest } from '@/types';
 
 const REALITY_STYLES: Record<RealityStatus, string> = {
   real: 'bg-green-100 text-green-800',
@@ -22,7 +24,31 @@ export default function HandoverPage() {
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [deliverables, setDeliverables] = useState<DeliverableOutputs | null>(null);
   const [loading, setLoading] = useState(true);
+  const [finishing, setFinishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function finish(choice: FinishRequest['choice']) {
+    if (!project) return;
+    setFinishing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/projects/${project.id}/finish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ choice } satisfies FinishRequest),
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        setError(body.error ?? 'Could not complete handover. Please try again.');
+        return;
+      }
+      setProject({ ...project, status: choice === 'launch' ? 'launched' : 'managed' });
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setFinishing(false);
+    }
+  }
 
   useEffect(() => {
     async function fetchProject() {
@@ -76,6 +102,35 @@ export default function HandoverPage() {
         </div>
 
         <ErrorBanner message={error} />
+
+        {project?.status === 'handover' && (
+          <Card className="mb-6 space-y-3">
+            <h2 className="text-base font-semibold text-gray-900">Make it yours</h2>
+            <p className="text-sm text-gray-600">
+              Take full ownership — we transfer the code, app, database, keys, and IP to your accounts —
+              or have us keep running and growing it for you.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="primary" onClick={() => finish('launch')} disabled={finishing} className="py-2.5">
+                {finishing ? 'Working…' : 'Take full ownership'}
+              </Button>
+              <Button variant="secondary" onClick={() => finish('managed')} disabled={finishing} className="py-2.5">
+                Have us run it (managed)
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {project?.status === 'launched' && (
+          <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-6 py-4 text-sm text-green-800 font-medium text-center">
+            🎉 It&apos;s all yours. Everything below has been transferred to your accounts.
+          </div>
+        )}
+        {project?.status === 'managed' && (
+          <div className="mb-6 rounded-lg bg-indigo-50 border border-indigo-200 px-6 py-4 text-sm text-indigo-800 font-medium text-center">
+            We&apos;re running it for you. Your handover package is below for full transparency.
+          </div>
+        )}
 
         {!deliverables ? (
           <Card>

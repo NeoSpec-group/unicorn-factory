@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ProjectResponse, ProjectStatus, CheckoutResponse } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import Textarea from '@/components/ui/Textarea';
 import Spinner from '@/components/ui/Spinner';
 import ErrorBanner from '@/components/ui/ErrorBanner';
 import JourneyTracker from '@/components/JourneyTracker';
@@ -130,6 +131,32 @@ function Panel({
   onGoto: (route: string) => void;
 }) {
   const s: ProjectStatus = project.status;
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [reported, setReported] = useState(false);
+
+  async function accept() {
+    setBusy(true);
+    const res = await fetch(`/api/projects/${project.id}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    setBusy(false);
+    if (res.ok) onGoto('/handover');
+  }
+
+  async function report() {
+    if (!note.trim()) return;
+    setBusy(true);
+    const res = await fetch(`/api/projects/${project.id}/report-issue`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+    setBusy(false);
+    if (res.ok) setReported(true);
+  }
 
   const heading: Record<ProjectStatus, string> = {
     intake: 'The Workshop',
@@ -192,9 +219,10 @@ function Panel({
       )}
 
       {s === 'uat' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Your MVP is ready to test-drive. Try it, then accept to move to Handover.
+            Your MVP is ready to test-drive. Try it, then accept to move to Handover — or report an issue
+            and we&apos;ll fix it (defects-only revision round).
           </p>
           {project.stagingUrl && (
             <a
@@ -206,10 +234,25 @@ function Panel({
               Open your MVP ↗
             </a>
           )}
-          <div>
-            <Button variant="primary" disabled className="py-2.5">
-              Accept &amp; continue (coming in Proving Ground)
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button variant="primary" onClick={accept} disabled={busy} className="py-2.5">
+              {busy ? 'Working…' : 'Accept & continue'}
             </Button>
+          </div>
+          <div className="border-t border-gray-100 pt-3">
+            {reported ? (
+              <p className="text-sm text-green-700 font-medium">
+                Thanks — we&apos;ve logged the issue and will get on it.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-500">Something not right? Report an issue.</p>
+                <Textarea value={note} onChange={setNote} placeholder="Describe what's wrong…" rows={3} />
+                <Button variant="secondary" onClick={report} disabled={busy || !note.trim()} className="py-2">
+                  Report issue
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -15,7 +15,7 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-type OpsAction = 'approve' | 'decline' | 'forge' | 'deliver';
+type OpsAction = 'approve' | 'decline' | 'forge' | 'deliver' | 'reforge';
 const VALID_REALITY: RealityStatus[] = ['real', 'limited', 'mocked', 'excluded'];
 
 function bad(error: string, status: number): Response {
@@ -72,6 +72,13 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     }
     case 'forge': {
       const guard = requireStatus('paid');
+      if (guard) return guard;
+      update = { status: 'building' };
+      break;
+    }
+    case 'reforge': {
+      // Revision round: address a defect reported during Proving Ground.
+      const guard = requireStatus('uat');
       if (guard) return guard;
       update = { status: 'building' };
       break;
