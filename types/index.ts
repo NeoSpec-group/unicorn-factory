@@ -262,6 +262,39 @@ export interface ProjectResponse {
 }
 
 // ============================================================
+// Ops surface (role: ops)
+// ============================================================
+
+export interface OpsProjectSummary {
+  id: string;
+  status: ProjectStatus;
+  ideaText: string;
+  tier: Tier | null;
+  estimateLow: number | null;
+  estimateHigh: number | null;
+  firmPrice: number | null;
+  repoUrl: string | null;
+  stagingUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OpsProjectsResponse {
+  projects: OpsProjectSummary[];
+}
+
+export interface ApproveRequest {
+  firmPrice: number; // whole USD
+}
+
+export interface DeliverRequest {
+  repoUrl: string;
+  stagingUrl: string;
+  handoverDoc: string;
+  realityMap: RealityMapEntry[];
+}
+
+// ============================================================
 // API: GET /api/health
 // ============================================================
 

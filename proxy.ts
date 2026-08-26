@@ -8,6 +8,7 @@ const PROTECTED_ROUTES = [
   '/commission',
   '/status',
   '/handover',
+  '/ops', // auth-gated here; the ops ROLE is enforced in the ops API + page
 ];
 
 export async function proxy(request: NextRequest) {
@@ -57,11 +58,13 @@ export const config = {
     '/commission/:path*',
     '/status/:path*',
     '/handover/:path*',
+    '/ops/:path*',
     '/intake',
     '/workshop',
     '/blueprint',
     '/commission',
     '/status',
     '/handover',
+    '/ops',
   ],
 };
