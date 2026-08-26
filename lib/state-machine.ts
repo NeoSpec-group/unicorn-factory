@@ -59,7 +59,7 @@ export const STATE_TRANSITIONS: StateTransition[] = [
   {
     from: 'approved',
     to: 'paid',
-    trigger: 'Stripe checkout.session.completed webhook',
+    trigger: 'Paystack charge.success webhook',
     guard: 'Project status is exactly approved; sets paid_at = T-0',
     actor: 'system',
   },

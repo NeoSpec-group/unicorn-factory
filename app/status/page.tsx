@@ -25,7 +25,7 @@ export default function StatusPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // One-shot read of the Stripe redirect flag after mount (avoids SSR mismatch).
+      // One-shot read of the Paystack redirect flag after mount (avoids SSR mismatch).
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setJustPaid(new URLSearchParams(window.location.search).get('paid') === '1');
     }

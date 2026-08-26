@@ -11,8 +11,8 @@ Get the platform running locally and walk the full founder journey end-to-end:
 - **Node.js 18+** (`node --version`)
 - A free **[Supabase](https://supabase.com)** project (Auth + Postgres)
 - An **[Anthropic API key](https://console.anthropic.com)** (idea intake, Workshop questions, Blueprint)
-- A **[Stripe](https://dashboard.stripe.com)** account in **test mode** (payment at Ignition)
-- Optional: the **[Stripe CLI](https://stripe.com/docs/stripe-cli)** for local webhook forwarding
+- A **[Paystack](https://dashboard.paystack.com)** account in **test mode** (payment at Ignition). Charges are in **USD**, so your account must have USD / international payments enabled.
+- Optional: a tunnel (**[ngrok](https://ngrok.com)** or `cloudflared`) to receive webhooks on localhost
 
 ---
 
@@ -58,8 +58,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...          # server-only, never NEXT_PUBLIC_
 ANTHROPIC_API_KEY=sk-ant-api03-...     # server-only
 ANTHROPIC_MODEL=claude-haiku-4-5       # optional override
-STRIPE_SECRET_KEY=sk_test_...          # test mode
-STRIPE_WEBHOOK_SECRET=whsec_...        # from `stripe listen` (see step 6)
+PAYSTACK_SECRET_KEY=sk_test_...        # test mode; also verifies webhook signatures
+PAYSTACK_PUBLIC_KEY=pk_test_...        # not required server-side (redirect flow)
 ```
 
 > Keys without `NEXT_PUBLIC_` are server-only and must never be exposed to the browser.
@@ -73,17 +73,25 @@ npm run dev      # http://localhost:3000
 Sign up on `/auth`, then walk **Intake → Workshop → Blueprint → Commission**. The founder path works with
 just Supabase + Anthropic. Payment and ops steps need steps 6–7.
 
-## 6. Stripe webhook (for Ignition / payment)
+## 6. Paystack webhook (for Ignition / payment)
 
-In a second terminal, forward Stripe events to the local webhook:
+Paystack signs webhooks with your **secret key** (no separate signing secret to copy). It POSTs to
+`/api/paystack/webhook` with an `x-paystack-signature` header, which the app verifies (HMAC-SHA512).
+
+Because Paystack needs a **public URL**, expose localhost with a tunnel for local testing:
 
 ```bash
-stripe login
-stripe listen --forward-to localhost:3000/api/stripe/webhook
+ngrok http 3000        # or: cloudflared tunnel --url http://localhost:3000
 ```
 
-Copy the `whsec_...` it prints into `STRIPE_WEBHOOK_SECRET` in `.env.local`, then restart `npm run dev`.
-At checkout use test card **`4242 4242 4242 4242`**, any future expiry, any CVC.
+Then in the **Paystack Dashboard → Settings → API Keys & Webhooks**, set the **Webhook URL** to
+`https://<your-tunnel>/api/paystack/webhook`.
+
+At checkout, use a **Paystack test card**: `4084 0840 8408 4081`, CVV `408`, any future expiry, PIN
+`0000`, OTP `123456` (see [paystack.com/docs/payments/test-payments](https://paystack.com/docs/payments/test-payments)).
+
+> The redirect back to `/status?paid=1` shows a confirmation immediately, but the **webhook** is what
+> flips the project to `paid` (T-0) — so the tunnel must be running for the status to actually advance.
 
 ## 7. Grant yourself the ops role
 
@@ -114,8 +122,9 @@ a normal + incognito window) so you can hold two sessions — but a single ops-r
    (or Decline).
 
 ### As the founder
-6. **Ignition** — Status now shows "Approved". Click **Pay … & ignite** → Stripe Checkout → test card
-   `4242…`. The webhook flips the project to `paid` (T-0) and you're redirected back with a confirmation.
+6. **Ignition** — Status now shows "Approved". Click **Pay … & ignite** → Paystack hosted checkout →
+   test card `4084 0840 8408 4081`. The webhook flips the project to `paid` (T-0) and you're redirected
+   back with a confirmation.
 
 ### As ops
 7. **The Forge** — the project is now `paid`. Click **Start The Forge** (build it externally with the
@@ -134,7 +143,7 @@ The **JourneyTracker** at the top of every screen shows exactly where the projec
 
 ## What's real vs. concierge (v1)
 
-- **Real:** auth, AI intake + Workshop questions, AI-generated Blueprint + tier estimate, Stripe payment,
+- **Real:** auth, AI intake + Workshop questions, AI-generated Blueprint + tier estimate, Paystack payment,
   the full state machine + gating, ops approvals, handover flow.
 - **Concierge (human-in-the-loop):** the build itself — ops runs the harness externally and records the
   artifact links. Estimates are AI-assisted but a human sets the firm price at Green-Light.
@@ -147,6 +156,6 @@ The **JourneyTracker** at the top of every screen shows exactly where the projec
 npm i -g vercel && vercel --prod
 ```
 
-Set all `.env.local` variables in **Vercel → Settings → Environment Variables**, and point a Stripe
-**Dashboard webhook** at `https://your-domain/api/stripe/webhook` (event: `checkout.session.completed`),
-using that endpoint's signing secret as `STRIPE_WEBHOOK_SECRET`.
+Set all `.env.local` variables in **Vercel → Settings → Environment Variables**, and point your Paystack
+**Dashboard webhook** at `https://your-domain/api/paystack/webhook` (event: `charge.success`). No signing
+secret to set — Paystack signs with your `PAYSTACK_SECRET_KEY`.

@@ -1,7 +1,8 @@
+import crypto from 'crypto';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { getServiceSupabase } from '@/lib/supabase/service';
-import { getStripe } from '@/lib/stripe';
+import { paystackInitialize } from '@/lib/paystack';
 import type { Project, CheckoutResponse, ApiError } from '@/types';
 
 interface RouteParams {
@@ -9,8 +10,8 @@ interface RouteParams {
 }
 
 // Founder pays the firm price (Ignition). Requires an approved project with a
-// firm_price set at Green-Light. Creates a Stripe Checkout session and a pending
-// payments row; the webhook confirms payment and sets T-0.
+// firm_price set at Green-Light. Initializes a Paystack transaction and returns
+// the hosted checkout URL; the webhook confirms payment and sets T-0.
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<Response> {
   const { id } = await params;
 
@@ -47,38 +48,23 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     );
   }
 
-  const origin = request.nextUrl.origin;
-  let sessionUrl: string | null;
-  let sessionId: string;
-  try {
-    const stripe = getStripe();
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: { name: 'Unicorn Factory — MVP build' },
-            unit_amount: typedProject.firm_price * 100, // dollars → cents
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${origin}/status?paid=1`,
-      cancel_url: `${origin}/status`,
-      metadata: { projectId: id },
-    });
-    sessionUrl = session.url;
-    sessionId = session.id;
-  } catch (err) {
-    console.error('[POST /api/projects/[id]/checkout] Stripe error:', err);
-    return Response.json(
-      { error: 'Could not start checkout. Please try again.' } satisfies ApiError,
-      { status: 502 },
-    );
+  if (!user.email) {
+    return Response.json({ error: 'Your account has no email on file.' } satisfies ApiError, { status: 400 });
   }
 
-  if (!sessionUrl) {
+  const origin = request.nextUrl.origin;
+  const reference = `uf_${id.slice(0, 8)}_${crypto.randomUUID()}`;
+
+  const init = await paystackInitialize({
+    email: user.email,
+    amountMinor: typedProject.firm_price * 100, // USD dollars → cents
+    currency: 'USD',
+    reference,
+    callbackUrl: `${origin}/status?paid=1`,
+    metadata: { projectId: id },
+  });
+
+  if (!init) {
     return Response.json(
       { error: 'Could not start checkout. Please try again.' } satisfies ApiError,
       { status: 502 },
@@ -88,15 +74,15 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
   // Record a pending payment (service role — trusted server write).
   const { error: payError } = await getServiceSupabase().from('payments').insert({
     project_id: id,
-    stripe_session_id: sessionId,
+    reference: init.reference,
     amount: typedProject.firm_price,
     status: 'pending',
   });
   if (payError) {
     console.error('[POST /api/projects/[id]/checkout] payments insert error:', payError.message);
-    // Non-fatal: the webhook can still reconcile via metadata.
+    // Non-fatal: the webhook can still reconcile via metadata + reference.
   }
 
-  const responseBody: CheckoutResponse = { url: sessionUrl };
+  const responseBody: CheckoutResponse = { url: init.authorizationUrl };
   return Response.json(responseBody, { status: 200 });
 }
