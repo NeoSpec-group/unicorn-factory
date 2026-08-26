@@ -92,6 +92,8 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     generated = {
       blueprint: {
         refinedIdea: typedProject.idea_text,
+        targetUsers: 'Not specified.',
+        keyFeatures: [],
         roadmap: [
           { title: 'Core flow', detail: 'The primary end-to-end journey your product delivers.' },
           { title: 'Accounts & data', detail: 'Authentication and persistence for your users.' },

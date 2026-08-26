@@ -13,7 +13,7 @@ export interface GeneratedBlueprint {
   tier: Tier;
 }
 
-const SYSTEM_PROMPT = `You are a senior product architect at a software MVP factory. Given a founder's idea and their answers to clarifying questions, produce a Blueprint: a validated shape of the idea, a build roadmap, a complexity tier, and an internal structured brief.
+const SYSTEM_PROMPT = `You are a senior product architect at a software MVP factory. Given a founder's idea and their answers to clarifying questions, produce a Blueprint: a validated shape of the idea, who it's for, what you'll build, a build roadmap, a complexity tier, and an internal structured brief.
 
 Classify complexity into exactly one tier, using these definitions:
 - "spark": a single core flow + authentication + database; peripheral features mocked.
@@ -22,8 +22,10 @@ Classify complexity into exactly one tier, using these definitions:
 
 Respond ONLY with a JSON object in this exact shape, no prose, no markdown fences:
 {
-  "refinedIdea": "2-4 sentence Markdown summary of the sharpened idea and who it's for",
-  "roadmap": [{"title": "Short phase name", "detail": "One sentence on what gets built"}],
+  "refinedIdea": "A confident 4-6 sentence Markdown summary that sharpens the idea, names the core value, and reads like a mini product brief the founder would be proud of",
+  "targetUsers": "1-2 sentences on exactly who this is for",
+  "keyFeatures": ["A concrete feature we'll build", "..."],
+  "roadmap": [{"title": "Short phase name", "detail": "1-2 sentences on what gets built in this phase and why"}],
   "tier": "spark" | "standard" | "advanced",
   "brief": {
     "problem": "The core problem in one sentence",
@@ -33,12 +35,14 @@ Respond ONLY with a JSON object in this exact shape, no prose, no markdown fence
     "successCriteria": ["measurable acceptance criterion", "..."]
   }
 }
-Keep roadmap to 3-6 items. Keep arrays concise (2-5 items each).`;
+Make keyFeatures 4-8 concrete items. Make roadmap 4-6 substantive phases. Keep brief arrays concise (2-5 items each).`;
 
 const VALID_TIERS: Tier[] = ['spark', 'standard', 'advanced'];
 
 interface RawBlueprint {
   refinedIdea?: unknown;
+  targetUsers?: unknown;
+  keyFeatures?: unknown;
   roadmap?: unknown;
   tier?: unknown;
   brief?: unknown;
@@ -90,6 +94,8 @@ export async function generateBlueprint(
   if (!raw) return null;
 
   const refinedIdea = asString(raw.refinedIdea);
+  const targetUsers = asString(raw.targetUsers, 'Not specified.');
+  const keyFeatures = asStringArray(raw.keyFeatures);
   const roadmap = normalizeRoadmap(raw.roadmap);
   const tier: Tier = VALID_TIERS.includes(raw.tier as Tier) ? (raw.tier as Tier) : 'standard';
 
@@ -105,5 +111,5 @@ export async function generateBlueprint(
     successCriteria: asStringArray(briefRaw.successCriteria),
   };
 
-  return { blueprint: { refinedIdea, roadmap }, brief, tier };
+  return { blueprint: { refinedIdea, targetUsers, keyFeatures, roadmap }, brief, tier };
 }

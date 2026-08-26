@@ -78,29 +78,82 @@ export default function BlueprintPage() {
     }
   }
 
-  function downloadBlueprint() {
+  async function downloadBlueprint() {
     if (!blueprint || !estimate) return;
+    const { jsPDF } = await import('jspdf');
     const band = estimate.tier ? TIER_BANDS[estimate.tier] : null;
-    const lines = [
-      '# Your Blueprint — Unicorn Factory',
-      '',
-      '## Refined idea',
-      blueprint.refinedIdea,
-      '',
-      '## Roadmap',
-      ...blueprint.roadmap.map((r) => `- **${r.title}** — ${r.detail}`),
-      '',
-      '## Estimate',
-      `- Tier: ${band?.label ?? '—'}`,
-      `- Estimated range: ${money(estimate.low)}–${money(estimate.high)}`,
-    ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'blueprint.md';
-    a.click();
-    URL.revokeObjectURL(url);
+
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 48;
+    const width = pageW - margin * 2;
+    let y = margin;
+
+    const INDIGO: [number, number, number] = [79, 70, 229];
+    const DARK: [number, number, number] = [17, 24, 39];
+    const GRAY: [number, number, number] = [107, 114, 128];
+
+    function ensure(space: number) {
+      if (y + space > pageH - margin) {
+        doc.addPage();
+        y = margin;
+      }
+    }
+    function text(
+      content: string,
+      opts: { size?: number; bold?: boolean; color?: [number, number, number]; gap?: number } = {},
+    ) {
+      const { size = 11, bold = false, color = DARK, gap = 6 } = opts;
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setFontSize(size);
+      doc.setTextColor(color[0], color[1], color[2]);
+      const lines = doc.splitTextToSize(content, width);
+      for (const l of lines) {
+        ensure(size + 4);
+        doc.text(l, margin, y);
+        y += size + 4;
+      }
+      y += gap;
+    }
+    function heading(content: string) {
+      ensure(24);
+      y += 6;
+      text(content, { size: 13, bold: true, color: INDIGO, gap: 4 });
+    }
+
+    text('UNICORN FACTORY', { size: 9, bold: true, color: INDIGO, gap: 2 });
+    text('Your Blueprint', { size: 22, bold: true, gap: 10 });
+
+    heading('Refined idea');
+    text(blueprint.refinedIdea);
+
+    if (blueprint.targetUsers && blueprint.targetUsers !== 'Not specified.') {
+      heading('Who it’s for');
+      text(blueprint.targetUsers);
+    }
+
+    if (blueprint.keyFeatures.length > 0) {
+      heading('What we’ll build');
+      for (const f of blueprint.keyFeatures) text(`•  ${f}`, { gap: 2 });
+      y += 4;
+    }
+
+    heading('Roadmap');
+    blueprint.roadmap.forEach((r, i) => {
+      text(`${i + 1}.  ${r.title}`, { bold: true, gap: 1 });
+      text(r.detail, { color: GRAY, gap: 6 });
+    });
+
+    heading('Estimate');
+    text(`Tier: ${band?.label ?? '—'}`, { gap: 1 });
+    text(`Estimated range: ${money(estimate.low)}–${money(estimate.high)}`, { bold: true, gap: 4 });
+    text('A range, not a bill. We confirm a firm price at the internal Green-Light review before you pay.', {
+      size: 9,
+      color: GRAY,
+    });
+
+    doc.save('blueprint.pdf');
   }
 
   if (loading) {
@@ -140,6 +193,27 @@ export default function BlueprintPage() {
             <Card>
               <h2 className="text-base font-semibold text-gray-900 mb-3">Refined idea</h2>
               <MarkdownRenderer content={blueprint.refinedIdea} />
+            </Card>
+          )}
+
+          {blueprint?.targetUsers && blueprint.targetUsers !== 'Not specified.' && (
+            <Card>
+              <h2 className="text-base font-semibold text-gray-900 mb-2">Who it&apos;s for</h2>
+              <p className="text-sm text-gray-700 leading-relaxed">{blueprint.targetUsers}</p>
+            </Card>
+          )}
+
+          {blueprint && blueprint.keyFeatures.length > 0 && (
+            <Card>
+              <h2 className="text-base font-semibold text-gray-900 mb-3">What we&apos;ll build</h2>
+              <ul className="space-y-2">
+                {blueprint.keyFeatures.map((f, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-gray-700">
+                    <span className="mt-0.5 text-indigo-500">✓</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
             </Card>
           )}
 
@@ -211,7 +285,7 @@ export default function BlueprintPage() {
                 onClick={downloadBlueprint}
                 className="text-xs text-indigo-600 hover:underline self-center"
               >
-                Download this Blueprint (free)
+                Download this Blueprint as PDF (free)
               </button>
             </div>
           )}

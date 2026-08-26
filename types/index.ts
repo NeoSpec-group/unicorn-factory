@@ -85,10 +85,13 @@ export interface RoadmapItem {
   detail: string;
 }
 
-// The free Blueprint artifact (refined idea + roadmap). The estimate lives in
-// dedicated project columns (tier / estimate_low / estimate_high / firm_price).
+// The free Blueprint artifact (refined idea, target users, key features, roadmap).
+// The estimate lives in dedicated project columns. The technical/executable brief
+// stays gated (projects.brief), never surfaced here.
 export interface BlueprintOutputs {
-  refinedIdea: string;      // Markdown
+  refinedIdea: string;      // Markdown — a solid paragraph
+  targetUsers: string;      // who it's for
+  keyFeatures: string[];    // "what we'll build" — visible scope
   roadmap: RoadmapItem[];
 }
 
