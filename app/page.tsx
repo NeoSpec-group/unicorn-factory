@@ -55,11 +55,11 @@ export default function LandingPage() {
         <section className="mx-auto max-w-3xl px-6 py-20 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
             Turn your idea into a working MVP —{' '}
-            <span className="text-indigo-600">overnight.</span>
+            <span className="text-indigo-600">in 72 hours.</span>
           </h1>
           <p className="mt-6 text-lg text-gray-600 max-w-2xl mx-auto">
-            Unicorn Factory runs an autonomous AI pipeline that researches your market, builds
-            your product, and ships it.
+            Refine your idea with us for free. When the Blueprint is right, we engineer your MVP —
+            delivered in under 72 hours — then hand it over, or keep running it for you.
           </p>
 
           <div className="mt-10 flex justify-center">
@@ -76,19 +76,19 @@ export default function LandingPage() {
           </h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             <FeatureBullet
-              icon="🔍"
-              title="Market Research"
-              description="Our AI agents scan the competitive landscape, validate pain points, and generate a go/no-go recommendation for your idea."
+              icon="✏️"
+              title="Refine for free"
+              description="Shape your idea with us in The Workshop and get a Blueprint — a validated idea, a build roadmap, and a cost estimate. Free, no commitment."
             />
             <FeatureBullet
-              icon="⚙️"
-              title="Autonomous Build"
-              description="Once you approve, the build pipeline scaffolds, implements, tests, and deploys your MVP to Vercel — no engineers needed."
+              icon="🏭"
+              title="We build it"
+              description="Commission the build. After a quick review to set a firm price, we engineer your MVP and ship it to a live URL — in under 72 hours."
             />
             <FeatureBullet
-              icon="🚀"
-              title="Ship & Iterate"
-              description="Receive a live URL, GitHub repository, requirements doc, and a growth strategy — everything you need to launch fast."
+              icon="🔑"
+              title="It's yours"
+              description="Test-drive it, then take full ownership — code, app, database, and IP transferred to your accounts — or have us keep running it for you."
             />
           </div>
         </section>
