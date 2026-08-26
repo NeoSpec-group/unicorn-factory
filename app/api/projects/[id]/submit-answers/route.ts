@@ -1,14 +1,13 @@
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { assertProjectStatus } from '@/lib/state-machine';
+import { generateBlueprint, type GeneratedBlueprint } from '@/lib/ai/blueprint';
 import { TIER_BANDS } from '@/types';
 import type {
   SubmitAnswersRequest,
   SubmitAnswersResponse,
   Project,
   ProjectOutputs,
-  BlueprintOutputs,
-  Tier,
   ApiError,
 } from '@/types';
 
@@ -82,27 +81,45 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     );
   }
 
-  // Generate the Blueprint + estimate.
-  // M1 SKELETON: placeholder content + default 'standard' tier. M2 replaces this
-  // with real LLM-generated refined idea/roadmap and an AI-classified tier.
-  const blueprint: BlueprintOutputs = {
-    refinedIdea: typedProject.idea_text,
-    roadmap: [
-      { title: 'Core flow', detail: 'The primary end-to-end journey your product delivers.' },
-      { title: 'Accounts & data', detail: 'Authentication and persistence for your users.' },
-      { title: 'Polish & ship', detail: 'A clean, deployable MVP wired to your accounts.' },
-    ],
-  };
-  const tier: Tier = 'standard';
+  // Generate the Blueprint + estimate via the LLM. If generation fails (model
+  // unavailable or unparseable after a retry), fall back to a safe default so the
+  // funnel never hard-blocks — the founder still gets a Blueprint they can act on.
+  let generated: GeneratedBlueprint | null = await generateBlueprint(
+    typedProject.idea_text,
+    answers,
+  );
+  if (!generated) {
+    generated = {
+      blueprint: {
+        refinedIdea: typedProject.idea_text,
+        roadmap: [
+          { title: 'Core flow', detail: 'The primary end-to-end journey your product delivers.' },
+          { title: 'Accounts & data', detail: 'Authentication and persistence for your users.' },
+          { title: 'Polish & ship', detail: 'A clean, deployable MVP wired to your accounts.' },
+        ],
+      },
+      brief: {
+        problem: 'Not specified.',
+        targetUsers: 'Not specified.',
+        coreFeatures: [],
+        outOfScope: [],
+        successCriteria: [],
+      },
+      tier: 'standard',
+    };
+  }
+
+  const { blueprint, brief, tier } = generated;
   const existingOutputs: ProjectOutputs = (typedProject.outputs as ProjectOutputs) ?? {};
   const updatedOutputs: ProjectOutputs = { ...existingOutputs, blueprint };
 
-  // Save answers, blueprint, estimate, and advance state.
+  // Save answers, blueprint (free), brief (gated), estimate, and advance state.
   const { error: updateError } = await supabase
     .from('projects')
     .update({
       clarifying_questions: answers,
       outputs: updatedOutputs,
+      brief,
       tier,
       estimate_low: TIER_BANDS[tier].low,
       estimate_high: TIER_BANDS[tier].high,

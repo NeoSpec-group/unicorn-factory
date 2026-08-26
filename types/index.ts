@@ -92,6 +92,17 @@ export interface BlueprintOutputs {
   roadmap: RoadmapItem[];
 }
 
+// The internal, GATED structured brief (targets the harness brief.md schema).
+// Stored in projects.brief and consumed at build time — never returned to the
+// founder pre-payment (ADR-6 free/gated enforcement).
+export interface Brief {
+  problem: string;
+  targetUsers: string;
+  coreFeatures: string[];
+  outOfScope: string[];
+  successCriteria: string[];
+}
+
 export type RealityStatus = 'real' | 'limited' | 'mocked' | 'excluded';
 
 export interface RealityMapEntry {
