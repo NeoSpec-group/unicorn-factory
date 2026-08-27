@@ -8,7 +8,7 @@ Unicorn Factory runs an autonomous AI pipeline that researches your market, eval
 
 ## Tech Stack
 
-- **Framework:** Next.js 14 (App Router, TypeScript)
+- **Framework:** Next.js 16 (App Router, TypeScript)
 - **Auth & Database:** Supabase (Auth + Postgres + RLS)
 - **Styling:** Tailwind CSS v4
 - **AI:** Vercel AI SDK + Anthropic Claude Haiku
@@ -48,62 +48,17 @@ npm install
 
 ### Step 3 — Run the database schema
 
-1. In your Supabase dashboard, go to **SQL Editor → New query**.
-2. Paste and run the following SQL:
+The canonical schema lives in [`supabase/migrations/`](./supabase/migrations) — one ordered `.sql`
+file per change. **Do not hand-edit tables in the dashboard;** add a new migration instead.
 
-```sql
--- Table: email_leads
-CREATE TABLE IF NOT EXISTS email_leads (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email      TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-ALTER TABLE email_leads ENABLE ROW LEVEL SECURITY;
+In your Supabase dashboard, go to **SQL Editor → New query**, then paste and run each migration file
+**in filename order** (`0001_…` first, then `0002_…`, etc.). Re-running them is safe — they use
+`IF NOT EXISTS` / `ON CONFLICT` guards.
 
--- Table: projects
-CREATE TABLE IF NOT EXISTS projects (
-  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id              UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  status               TEXT NOT NULL DEFAULT 'idea_submitted'
-                         CHECK (status IN (
-                           'idea_submitted',
-                           'questions_answered',
-                           'research_running',
-                           'research_complete',
-                           'checkpoint_reviewed',
-                           'build_running',
-                           'build_complete',
-                           'stopped'
-                         )),
-  idea_text            TEXT NOT NULL,
-  clarifying_questions JSONB,
-  outputs              JSONB,
-  created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at           TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+> If you use the Supabase CLI, `supabase db push` applies them for you.
 
-CREATE POLICY "Users own their projects"
-  ON projects FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE INDEX IF NOT EXISTS projects_user_id_idx ON projects (user_id);
-CREATE INDEX IF NOT EXISTS projects_status_idx ON projects (status);
-
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER projects_updated_at
-  BEFORE UPDATE ON projects
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-```
+After running the migrations, promote your own account to `ops` (see the note at the bottom of
+`0003_profiles.sql`) to unlock the internal `/ops` surface.
 
 ### Step 4 — Get an Anthropic API key
 

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { getRouteForStatus } from '@/types';
-import type { ProjectStatus } from '@/types';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import ErrorBanner from '@/components/ui/ErrorBanner';
@@ -19,6 +18,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
 
   // On mount: check if user is already authenticated
@@ -29,7 +29,7 @@ export default function AuthPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        await redirectByProjectStatus(session.access_token);
+        router.push('/dashboard');
       } else {
         setCheckingSession(false);
       }
@@ -37,27 +37,6 @@ export default function AuthPage() {
     checkSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function redirectByProjectStatus(accessToken: string) {
-    try {
-      const supabase = createClient();
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id, status')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (projects && projects.length > 0) {
-        const project = projects[0] as { id: string; status: ProjectStatus };
-        sessionStorage.setItem('uf_project_id', project.id);
-        router.push(getRouteForStatus(project.status));
-      } else {
-        router.push('/idea');
-      }
-    } catch {
-      router.push('/idea');
-    }
-  }
 
   async function handleSubmit() {
     setError(null);
@@ -69,7 +48,7 @@ export default function AuthPage() {
     try {
       const supabase = createClient();
       if (activeTab === 'sign-up') {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
         });
@@ -77,7 +56,16 @@ export default function AuthPage() {
           setError(signUpError.message);
           return;
         }
-        router.push('/idea');
+        if (data.session) {
+          // Email confirmation is off — we're signed in immediately.
+          router.push('/dashboard');
+        } else {
+          // Email confirmation is on — no session yet. Guide the user.
+          setNotice(
+            'Account created. Confirm your email, then sign in. (For local testing, disable email confirmation in Supabase → Authentication.)',
+          );
+          setActiveTab('sign-in');
+        }
       } else {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -88,9 +76,9 @@ export default function AuthPage() {
           return;
         }
         if (data.session) {
-          await redirectByProjectStatus(data.session.access_token);
+          router.push('/dashboard');
         } else {
-          router.push('/idea');
+          router.push('/dashboard');
         }
       }
     } catch {
@@ -113,9 +101,7 @@ export default function AuthPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <a href="/" className="text-2xl font-bold text-indigo-600">
-            Unicorn Factory
-          </a>
+          <Link href="/" className="text-2xl font-bold text-indigo-600">Unicorn Factory</Link>
           <p className="mt-1 text-sm text-gray-500">Your autonomous MVP builder</p>
         </div>
 
@@ -129,6 +115,7 @@ export default function AuthPage() {
                 onClick={() => {
                   setActiveTab(tab);
                   setError(null);
+                  setNotice(null);
                 }}
                 className={[
                   'flex-1 rounded-md py-2 text-sm font-medium transition-colors',
@@ -169,6 +156,12 @@ export default function AuthPage() {
               />
             </div>
 
+            {notice && (
+              <div className="rounded-md bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-800">
+                {notice}
+              </div>
+            )}
+
             <ErrorBanner message={error} />
 
             <Button
@@ -187,9 +180,7 @@ export default function AuthPage() {
         </div>
 
         <p className="mt-4 text-center text-sm text-gray-500">
-          <a href="/" className="text-indigo-600 hover:underline">
-            Back to home
-          </a>
+          <Link href="/" className="text-indigo-600 hover:underline">Back to home</Link>
         </p>
       </div>
     </div>

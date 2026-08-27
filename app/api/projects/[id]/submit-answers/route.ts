@@ -1,10 +1,13 @@
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { assertProjectStatus } from '@/lib/state-machine';
+import { generateBlueprint, type GeneratedBlueprint } from '@/lib/ai/blueprint';
+import { TIER_BANDS } from '@/types';
 import type {
   SubmitAnswersRequest,
   SubmitAnswersResponse,
   Project,
+  ProjectOutputs,
   ApiError,
 } from '@/types';
 
@@ -70,7 +73,7 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
 
   // State guard
   try {
-    assertProjectStatus(typedProject.status, 'idea_submitted');
+    assertProjectStatus(typedProject.status, 'intake');
   } catch (err) {
     return Response.json(
       { error: err instanceof Error ? err.message : 'Invalid state.' } satisfies ApiError,
@@ -78,12 +81,51 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     );
   }
 
-  // Save answers and advance state
+  // Generate the Blueprint + estimate via the LLM. If generation fails (model
+  // unavailable or unparseable after a retry), fall back to a safe default so the
+  // funnel never hard-blocks — the founder still gets a Blueprint they can act on.
+  let generated: GeneratedBlueprint | null = await generateBlueprint(
+    typedProject.idea_text,
+    answers,
+  );
+  if (!generated) {
+    generated = {
+      blueprint: {
+        refinedIdea: typedProject.idea_text,
+        targetUsers: 'Not specified.',
+        keyFeatures: [],
+        roadmap: [
+          { title: 'Core flow', detail: 'The primary end-to-end journey your product delivers.' },
+          { title: 'Accounts & data', detail: 'Authentication and persistence for your users.' },
+          { title: 'Polish & ship', detail: 'A clean, deployable MVP wired to your accounts.' },
+        ],
+      },
+      brief: {
+        problem: 'Not specified.',
+        targetUsers: 'Not specified.',
+        coreFeatures: [],
+        outOfScope: [],
+        successCriteria: [],
+      },
+      tier: 'standard',
+    };
+  }
+
+  const { blueprint, brief, tier } = generated;
+  const existingOutputs: ProjectOutputs = (typedProject.outputs as ProjectOutputs) ?? {};
+  const updatedOutputs: ProjectOutputs = { ...existingOutputs, blueprint };
+
+  // Save answers, blueprint (free), brief (gated), estimate, and advance state.
   const { error: updateError } = await supabase
     .from('projects')
     .update({
       clarifying_questions: answers,
-      status: 'questions_answered',
+      outputs: updatedOutputs,
+      brief,
+      tier,
+      estimate_low: TIER_BANDS[tier].low,
+      estimate_high: TIER_BANDS[tier].high,
+      status: 'blueprint_ready',
     })
     .eq('id', id);
 
@@ -95,6 +137,6 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     );
   }
 
-  const responseBody: SubmitAnswersResponse = { success: true, nextStatus: 'questions_answered' };
+  const responseBody: SubmitAnswersResponse = { success: true, nextStatus: 'blueprint_ready' };
   return Response.json(responseBody, { status: 200 });
 }

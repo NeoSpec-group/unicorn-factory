@@ -2,12 +2,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 const PROTECTED_ROUTES = [
-  '/idea',
-  '/questions',
-  '/research',
-  '/checkpoint',
-  '/build',
-  '/deliverables',
+  '/dashboard',
+  '/intake',
+  '/projects',
+  '/ops', // auth-gated here; the ops ROLE is enforced in the ops API + page
 ];
 
 export async function proxy(request: NextRequest) {
@@ -46,6 +44,18 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// Match each protected route AND its sub-paths (`:path*`) so the `startsWith`
+// guard above and the matcher agree — previously the matcher was exact-only,
+// leaving sub-paths unguarded.
 export const config = {
-  matcher: ['/idea', '/questions', '/research', '/checkpoint', '/build', '/deliverables'],
+  matcher: [
+    '/dashboard/:path*',
+    '/intake/:path*',
+    '/projects/:path*',
+    '/ops/:path*',
+    '/dashboard',
+    '/intake',
+    '/projects',
+    '/ops',
+  ],
 };

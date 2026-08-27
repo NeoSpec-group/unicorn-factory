@@ -39,7 +39,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     return Response.json({ error: 'Invalid JSON body.' } satisfies ApiError, { status: 400 });
   }
 
-  const { ideaText } = body;
+  const { ideaText, portfolioId } = body;
 
   if (
     !ideaText ||
@@ -51,6 +51,21 @@ export async function POST(request: NextRequest): Promise<Response> {
       { error: 'Idea text must be between 20 and 500 characters.' } satisfies ApiError,
       { status: 400 },
     );
+  }
+
+  if (!portfolioId || typeof portfolioId !== 'string') {
+    return Response.json({ error: 'A portfolio is required.' } satisfies ApiError, { status: 400 });
+  }
+
+  // Verify the portfolio exists and belongs to this user (RLS also enforces this).
+  const { data: portfolio } = await supabase
+    .from('portfolios')
+    .select('id')
+    .eq('id', portfolioId)
+    .eq('user_id', user.id)
+    .single();
+  if (!portfolio) {
+    return Response.json({ error: 'Portfolio not found.' } satisfies ApiError, { status: 404 });
   }
 
   // Call LLM for constraint check (with one retry built into callLLM)
@@ -99,7 +114,8 @@ export async function POST(request: NextRequest): Promise<Response> {
     .from('projects')
     .insert({
       user_id: user.id,
-      status: 'idea_submitted',
+      portfolio_id: portfolioId,
+      status: 'intake',
       idea_text: ideaText.trim(),
     })
     .select('id')

@@ -16,6 +16,7 @@ const MODEL_ID = process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5';
 export async function callLLM(
   systemPrompt: string,
   userPrompt: string,
+  maxOutputTokens = 512,
 ): Promise<string> {
   const model = anthropic(MODEL_ID);
   let lastError: unknown;
@@ -26,7 +27,7 @@ export async function callLLM(
         model,
         system: systemPrompt,
         prompt: userPrompt,
-        maxOutputTokens: 512,
+        maxOutputTokens,
       });
       return text;
     } catch (err) {
@@ -40,10 +41,25 @@ export async function callLLM(
 }
 
 /**
- * Safely parse LLM JSON output.
- * Returns null if parsing fails — callers should retry or fall back gracefully.
+ * Safely parse LLM JSON output. Tries a strict parse first, then falls back to
+ * extracting the outermost JSON object/array (models sometimes wrap JSON in
+ * prose or ```json fences). Returns null if nothing parses.
  */
 export function parseLLMJson<T>(text: string): T | null {
+  const strict = tryParse<T>(text.trim());
+  if (strict !== null) return strict;
+
+  // Strip code fences, then grab the first {...} or [...] span.
+  const unfenced = text.replace(/```(?:json)?/gi, '').trim();
+  const objMatch = unfenced.match(/[{[][\s\S]*[}\]]/);
+  if (objMatch) {
+    const extracted = tryParse<T>(objMatch[0]);
+    if (extracted !== null) return extracted;
+  }
+  return null;
+}
+
+function tryParse<T>(text: string): T | null {
   try {
     return JSON.parse(text) as T;
   } catch {

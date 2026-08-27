@@ -12,12 +12,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* The app is a light-only design (hardcoded bg-white / gray classes). We do NOT
+   flip to a dark palette on prefers-color-scheme: dark — doing so turned body
+   text near-white while inputs stayed white, making typed text invisible. */
 
 body {
   background: var(--background);
