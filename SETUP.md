@@ -40,6 +40,8 @@ The schema lives in [`supabase/migrations/`](./supabase/migrations) — the sour
 0003_profiles.sql     profiles + role (founder|ops) + auto-provision trigger
 0004_journey_v1.sql   journey state machine + estimate columns + payments table
 0005_brief.sql        gated structured brief column
+0006_payments_reference.sql  rename payments column for Paystack
+0007_portfolios.sql   portfolios + projects.portfolio_id (backfills existing ideas)
 ```
 
 Re-running is safe (guarded with `IF NOT EXISTS` / `ON CONFLICT`).
@@ -111,7 +113,10 @@ You'll play **two roles**: the **founder** (main app) and **ops** (`/ops`). Easi
 a normal + incognito window) so you can hold two sessions — but a single ops-roled account can do both.
 
 ### As the founder
-1. **Intake** — `/auth` → sign up → describe your idea (20–500 chars). The LLM accepts/declines it.
+1. **Dashboard** — `/auth` → sign up → you land on `/dashboard` with a default portfolio. Create
+   portfolios and click **New idea** to start one; **Intake** asks you to describe your idea (20–500
+   chars) and the LLM accepts/declines it. Each idea then lives at its own URL, `/projects/[id]`, whose
+   stage is driven by status (no manual stage-hopping).
 2. **The Workshop** — answer the AI's clarifying questions.
 3. **Blueprint** — see the real, LLM-generated refined idea + roadmap + tier estimate band. You can
    **download** it (free) or **Commission the build**, or **Park**.
