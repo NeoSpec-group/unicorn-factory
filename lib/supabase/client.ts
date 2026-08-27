@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Browser-side Supabase client using the anon/public key.
@@ -9,7 +10,7 @@ import { createBrowserClient } from '@supabase/ssr';
  * storage lock — which makes auth calls (e.g. signInWithPassword) hang forever
  * in "pending". One shared instance avoids that.
  */
-let browserClient: ReturnType<typeof createBrowserClient> | undefined;
+let browserClient: SupabaseClient | undefined;
 
 export function createClient() {
   if (!browserClient) {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import UserNav from '@/components/UserNav';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -10,7 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Unicorn Factory',
   description:
-    'Turn your idea into a working MVP — overnight. Unicorn Factory runs an autonomous AI pipeline that researches your market, builds your product, and ships it.',
+    'Turn your idea into a working MVP in 72 hours. Refine your idea free, we engineer your MVP, then hand it over — or run it for you.',
 };
 
 export default function RootLayout({
@@ -20,7 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full bg-gray-50 text-gray-900">{children}</body>
+      <body className="min-h-full bg-gray-50 text-gray-900">
+        <UserNav />
+        {children}
+      </body>
     </html>
   );
 }
