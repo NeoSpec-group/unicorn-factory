@@ -2,12 +2,9 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
 const PROTECTED_ROUTES = [
+  '/dashboard',
   '/intake',
-  '/workshop',
-  '/blueprint',
-  '/commission',
-  '/status',
-  '/handover',
+  '/projects',
   '/ops', // auth-gated here; the ops ROLE is enforced in the ops API + page
 ];
 
@@ -52,19 +49,13 @@ export async function proxy(request: NextRequest) {
 // leaving sub-paths unguarded.
 export const config = {
   matcher: [
+    '/dashboard/:path*',
     '/intake/:path*',
-    '/workshop/:path*',
-    '/blueprint/:path*',
-    '/commission/:path*',
-    '/status/:path*',
-    '/handover/:path*',
+    '/projects/:path*',
     '/ops/:path*',
+    '/dashboard',
     '/intake',
-    '/workshop',
-    '/blueprint',
-    '/commission',
-    '/status',
-    '/handover',
+    '/projects',
     '/ops',
   ],
 };

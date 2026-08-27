@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { getRouteForStatus } from '@/types';
-import type { ProjectStatus } from '@/types';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import ErrorBanner from '@/components/ui/ErrorBanner';
@@ -31,7 +29,7 @@ export default function AuthPage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
-        await redirectByProjectStatus(session.access_token);
+        router.push('/dashboard');
       } else {
         setCheckingSession(false);
       }
@@ -39,27 +37,6 @@ export default function AuthPage() {
     checkSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function redirectByProjectStatus(accessToken: string) {
-    try {
-      const supabase = createClient();
-      const { data: projects } = await supabase
-        .from('projects')
-        .select('id, status')
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (projects && projects.length > 0) {
-        const project = projects[0] as { id: string; status: ProjectStatus };
-        sessionStorage.setItem('uf_project_id', project.id);
-        router.push(getRouteForStatus(project.status));
-      } else {
-        router.push('/intake');
-      }
-    } catch {
-      router.push('/intake');
-    }
-  }
 
   async function handleSubmit() {
     setError(null);
@@ -81,7 +58,7 @@ export default function AuthPage() {
         }
         if (data.session) {
           // Email confirmation is off — we're signed in immediately.
-          router.push('/intake');
+          router.push('/dashboard');
         } else {
           // Email confirmation is on — no session yet. Guide the user.
           setNotice(
@@ -99,9 +76,9 @@ export default function AuthPage() {
           return;
         }
         if (data.session) {
-          await redirectByProjectStatus(data.session.access_token);
+          router.push('/dashboard');
         } else {
-          router.push('/intake');
+          router.push('/dashboard');
         }
       }
     } catch {

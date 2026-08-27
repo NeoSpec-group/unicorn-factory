@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { CreateProjectResponse } from '@/types';
@@ -12,14 +12,27 @@ import Spinner from '@/components/ui/Spinner';
 const MIN_CHARS = 20;
 const MAX_CHARS = 500;
 
-export default function IdeaPage() {
+export default function IntakePage() {
   const router = useRouter();
+  const [portfolioId, setPortfolioId] = useState<string | null>(null);
   const [ideaText, setIdeaText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const pid = new URLSearchParams(window.location.search).get('portfolio');
+    if (!pid) {
+      router.replace('/dashboard');
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPortfolioId(pid);
+  }, [router]);
+
   async function handleSubmit() {
     setError(null);
+    if (!portfolioId) return;
     if (ideaText.trim().length < MIN_CHARS) {
       setError(`Please describe your idea in at least ${MIN_CHARS} characters.`);
       return;
@@ -29,27 +42,19 @@ export default function IdeaPage() {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ideaText: ideaText.trim() }),
+        body: JSON.stringify({ ideaText: ideaText.trim(), portfolioId }),
       });
-
       const body = (await res.json()) as CreateProjectResponse | { error: string };
-
       if (!res.ok) {
-        const errBody = body as { error: string };
-        setError(errBody.error ?? 'Something went wrong. Please try again.');
+        setError((body as { error: string }).error ?? 'Something went wrong. Please try again.');
         return;
       }
-
       const data = body as CreateProjectResponse;
-
       if (data.verdict === 'decline') {
         setError(data.reason);
         return;
       }
-
-      // Accept path
-      sessionStorage.setItem('uf_project_id', data.projectId);
-      router.push('/workshop');
+      router.push(`/projects/${data.projectId}`);
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -63,16 +68,20 @@ export default function IdeaPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-xl">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <Link href="/" className="text-xl font-bold text-indigo-600">Unicorn Factory</Link>
+        <div className="mb-8 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-indigo-600">
+            Unicorn Factory
+          </Link>
+          <Link href="/dashboard" className="text-sm text-indigo-600 hover:underline">
+            ← Dashboard
+          </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">What&apos;s your idea?</h1>
           <p className="text-sm text-gray-500 mb-6">
-            Describe your product idea in a few sentences. Our AI will evaluate whether it can
-            be built as a software MVP.
+            Describe your product idea in a few sentences. Our AI will evaluate whether it can be built as a
+            software MVP, then shape it with you.
           </p>
 
           <div className="space-y-4">
@@ -90,11 +99,7 @@ export default function IdeaPage() {
                 <span
                   className={[
                     'text-xs',
-                    charCount > MAX_CHARS
-                      ? 'text-red-500'
-                      : charCount < MIN_CHARS
-                      ? 'text-gray-400'
-                      : 'text-green-600',
+                    charCount > MAX_CHARS ? 'text-red-500' : charCount < MIN_CHARS ? 'text-gray-400' : 'text-green-600',
                   ].join(' ')}
                 >
                   {charCount}/{MAX_CHARS}
@@ -105,24 +110,22 @@ export default function IdeaPage() {
             {error && (
               <div>
                 <ErrorBanner message={error} />
-                {error && (
-                  <button
-                    onClick={() => {
-                      setError(null);
-                      setIdeaText('');
-                    }}
-                    className="mt-2 text-xs text-indigo-600 hover:underline"
-                  >
-                    Try a different idea
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setError(null);
+                    setIdeaText('');
+                  }}
+                  className="mt-2 text-xs text-indigo-600 hover:underline"
+                >
+                  Try a different idea
+                </button>
               </div>
             )}
 
             <Button
               variant="primary"
               onClick={handleSubmit}
-              disabled={loading || !isAtMin || charCount > MAX_CHARS}
+              disabled={loading || !isAtMin || charCount > MAX_CHARS || !portfolioId}
               className="w-full py-2.5"
             >
               {loading ? (

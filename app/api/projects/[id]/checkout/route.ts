@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
     amountMinor: typedProject.firm_price * 100, // USD dollars → cents
     currency: 'USD',
     reference,
-    callbackUrl: `${origin}/status?paid=1`,
+    callbackUrl: `${origin}/projects/${id}?paid=1`,
     metadata: { projectId: id },
   });
 

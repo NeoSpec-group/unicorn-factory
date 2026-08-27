@@ -134,6 +134,7 @@ export interface ClarifyingQuestionEntry {
 export interface Project {
   id: string;
   user_id: string;
+  portfolio_id: string | null;
   status: ProjectStatus;
   idea_text: string;
   clarifying_questions: ClarifyingQuestionEntry[] | null;
@@ -173,10 +174,51 @@ export interface LeadResponse {
 }
 
 // ============================================================
+// Portfolios (a user owns many; each holds many ideas)
+// ============================================================
+
+export interface Portfolio {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IdeaSummary {
+  id: string;
+  status: ProjectStatus;
+  title: string;       // short label derived from the idea text
+  stageLabel: string;  // founder-facing journey stage
+  stageIndex: number;  // for a mini progress bar
+  updatedAt: string;
+}
+
+export interface PortfolioWithIdeas {
+  id: string;
+  name: string;
+  createdAt: string;
+  ideas: IdeaSummary[];
+}
+
+export interface PortfoliosResponse {
+  portfolios: PortfolioWithIdeas[];
+}
+
+export interface CreatePortfolioRequest {
+  name: string;
+}
+
+export interface RenamePortfolioRequest {
+  name: string;
+}
+
+// ============================================================
 // API: POST /api/projects
 // ============================================================
 
 export interface CreateProjectRequest {
+  portfolioId: string;
   ideaText: string; // 20–500 chars
 }
 
@@ -349,26 +391,4 @@ export interface QuestionsResult {
 
 export interface ApiError {
   error: string;
-}
-
-// ============================================================
-// State Routing Helper — where a founder lands for a given status
-// ============================================================
-
-export function getRouteForStatus(status: ProjectStatus): string {
-  const routeMap: Record<ProjectStatus, string> = {
-    intake:          '/workshop',
-    blueprint_ready: '/blueprint',
-    commissioned:    '/status',
-    approved:        '/status',
-    declined:        '/status',
-    paid:            '/status',
-    building:        '/status',
-    uat:             '/status',
-    handover:        '/handover',
-    launched:        '/handover',
-    managed:         '/handover',
-    parked:          '/status',
-  };
-  return routeMap[status];
 }
