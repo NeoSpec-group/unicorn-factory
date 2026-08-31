@@ -1,0 +1,80 @@
+name: CI
+
+# Blocking pipeline on every push + pull request (Design Decision 1).
+#
+#   job: verify  — typecheck -> lint -> unit + mocked route-integration tests
+#                  (fast, no external services; this is `npm run test`, which
+#                  self-skips tests/integration/rls-isolation.test.ts).
+#   job: rls     — starts an ephemeral local Supabase (Supabase CLI, migrations
+#                  0001-0007 applied) and runs the RLS-isolation subset against
+#                  it for real (AC-A4).
+#
+# E2E (Playwright, e2e/journey.spec.ts) is intentionally NOT run here — it
+# needs live Anthropic + Paystack test-mode + a public webhook URL/tunnel and
+# is executed at the G-10 gate by the E2E Verifier with captured evidence, not
+# on every PR.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify (typecheck, lint, unit + integration)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit + mocked route-integration tests
+        run: npm run test
+
+  rls:
+    name: rls (RLS-isolation against local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Applies supabase/migrations/0001-0007 to a fresh local Postgres via the
+      # Supabase CLI's Docker stack (no external credentials needed).
+      - name: Start local Supabase (applies migrations 0001-0007)
+        run: supabase start
+
+      - name: RLS-isolation tests (real Postgres, two anon-key clients)
+        run: npx vitest run tests/integration/rls-isolation.test.ts
+        env:
+          RUN_RLS_TESTS: '1'
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop
