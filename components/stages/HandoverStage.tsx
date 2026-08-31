@@ -5,6 +5,7 @@ import type { ProjectResponse, RealityStatus, FinishRequest } from '@/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import ErrorBanner from '@/components/ui/ErrorBanner';
+import Notice from '@/components/Notice';
 import DeliverableCard from '@/components/DeliverableCard';
 
 interface StageProps {
@@ -13,10 +14,10 @@ interface StageProps {
 }
 
 const REALITY_STYLES: Record<RealityStatus, string> = {
-  real: 'bg-green-100 text-green-800',
-  limited: 'bg-yellow-100 text-yellow-800',
-  mocked: 'bg-gray-100 text-gray-700',
-  excluded: 'bg-red-100 text-red-700',
+  real: 'bg-[var(--color-success-bg)] text-[var(--color-success-fg)]',
+  limited: 'bg-[var(--color-warning-bg)] text-[var(--color-warning-fg)]',
+  mocked: 'bg-surface-muted text-foreground-muted',
+  excluded: 'bg-[var(--color-danger-bg)] text-[var(--color-danger-fg)]',
 };
 
 export default function HandoverStage({ project, reload }: StageProps) {
@@ -34,7 +35,7 @@ export default function HandoverStage({ project, reload }: StageProps) {
         body: JSON.stringify({ choice } satisfies FinishRequest),
       });
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         setError(body.error ?? 'Could not complete handover.');
         return;
       }
@@ -49,8 +50,8 @@ export default function HandoverStage({ project, reload }: StageProps) {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Handover</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Handover</h1>
+        <p className="mt-1 text-sm text-foreground-muted">
           Your MVP, the keys to it, and an honest map of what&apos;s real.
         </p>
       </div>
@@ -59,12 +60,12 @@ export default function HandoverStage({ project, reload }: StageProps) {
 
       {project.status === 'handover' && (
         <Card className="mb-6 space-y-3">
-          <h2 className="text-base font-semibold text-gray-900">Make it yours</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-base font-semibold text-foreground">Make it yours</h2>
+          <p className="text-sm text-foreground-muted">
             Take full ownership — we transfer the code, app, database, keys, and IP to your accounts — or
             have us keep running and growing it for you.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Button variant="primary" onClick={() => finish('launch')} disabled={finishing} className="py-2.5">
               {finishing ? 'Working…' : 'Take full ownership'}
             </Button>
@@ -76,19 +77,23 @@ export default function HandoverStage({ project, reload }: StageProps) {
       )}
 
       {project.status === 'launched' && (
-        <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-6 py-4 text-sm text-green-800 font-medium text-center">
-          🎉 It&apos;s all yours. Everything below has been transferred to your accounts.
+        <div className="mb-6">
+          <Notice tone="success" className="text-center">
+            It&apos;s all yours. Everything below has been transferred to your accounts.
+          </Notice>
         </div>
       )}
       {project.status === 'managed' && (
-        <div className="mb-6 rounded-lg bg-indigo-50 border border-indigo-200 px-6 py-4 text-sm text-indigo-800 font-medium text-center">
-          We&apos;re running it for you. Your handover package is below for full transparency.
+        <div className="mb-6">
+          <Notice tone="info" className="text-center">
+            We&apos;re running it for you. Your handover package is below for full transparency.
+          </Notice>
         </div>
       )}
 
       {!deliverables ? (
         <Card>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-foreground-muted">
             Your handover package will appear here once your build is delivered.
           </p>
         </Card>
@@ -104,30 +109,38 @@ export default function HandoverStage({ project, reload }: StageProps) {
           )}
 
           {deliverables.realityMap.length > 0 && (
-            <Card className="p-0 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="text-base font-semibold text-gray-900">Reality Map</h2>
-                <p className="text-xs text-gray-500">What&apos;s real, limited, mocked, or excluded.</p>
+            <Card className="overflow-hidden p-0">
+              <div className="border-b border-border px-6 py-4">
+                <h2 className="text-base font-semibold text-foreground">Reality Map</h2>
+                <p className="text-xs text-foreground-muted">What&apos;s real, limited, mocked, or excluded.</p>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-border text-sm">
+                  <thead className="bg-surface-muted">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Feature</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Notes</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                        Feature
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                        Notes
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
+                  <tbody className="divide-y divide-border bg-surface">
                     {deliverables.realityMap.map((entry, i) => (
                       <tr key={i}>
-                        <td className="px-6 py-4 font-medium text-gray-900">{entry.feature}</td>
+                        <td className="px-6 py-4 font-medium text-foreground">{entry.feature}</td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${REALITY_STYLES[entry.status]}`}>
+                          <span
+                            className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${REALITY_STYLES[entry.status]}`}
+                          >
                             {entry.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-gray-600">{entry.note}</td>
+                        <td className="px-6 py-4 text-foreground-muted">{entry.note}</td>
                       </tr>
                     ))}
                   </tbody>

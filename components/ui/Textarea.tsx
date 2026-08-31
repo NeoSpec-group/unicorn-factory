@@ -29,10 +29,10 @@ export default function Textarea({
       rows={rows}
       disabled={disabled}
       className={[
-        'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900',
-        'placeholder-gray-400 shadow-sm resize-vertical',
-        'focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500',
-        'disabled:bg-gray-100 disabled:cursor-not-allowed',
+        'block w-full rounded-md border border-border-strong px-3 py-2 text-sm text-foreground',
+        'placeholder:text-foreground-muted shadow-sm resize-vertical transition-colors duration-150',
+        'focus-visible:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        'disabled:bg-surface-muted disabled:cursor-not-allowed',
       ].join(' ')}
     />
   );

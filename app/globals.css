@@ -1,23 +1,79 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/**
+ * Unicorn Factory — brand design tokens (Tailwind v4 `@theme`).
+ *
+ * Source of truth: `lib/brand/tokens.ts` (`lightTheme` + `semantic`) — read-only,
+ * owned by the G-4 Brand Agent. The values below mirror that module exactly so
+ * screens/components can reference named utilities (`bg-primary`, `text-foreground`,
+ * `border-border`, …) or arbitrary-value CSS vars (`bg-[var(--color-success-bg)]`)
+ * instead of literal Tailwind color utilities (`bg-indigo-600`, `text-gray-900`, …).
+ * Do not hardcode a brand hex/radius/shadow literal anywhere outside this file and
+ * `lib/brand/*` — see brand.md "Configurable Source of Truth".
+ *
+ * `@theme` (not `@theme inline`) is used because this is a fixed, light-only V1
+ * theme (no runtime class-based theme swap) — Tailwind emits these as real
+ * `:root` custom properties AND generates the matching utility classes.
+ */
+@theme {
+  /* Surfaces */
+  --color-background: #f9fafb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f6;
+
+  /* Text */
+  --color-foreground: #111827;
+  --color-foreground-muted: #6b7280;
+
+  /* Borders */
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  /* Primary (indigo) — buttons, links, active tracker node, focus ring base */
+  --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
+  --color-primary-soft: #eef2ff;
+
+  /* Accent (amber) — sparing heat: Ignition/Forge, hero kicker. Never a primary CTA. */
+  --color-accent: #f59e0b;
+  --color-accent-soft: #fef3c7;
+  --color-accent-fg: #b45309; /* accent.700 — AA-safe for accent *text* (≈5:1) */
+
+  /* Focus ring — every interactive element's focus-visible outline */
+  --color-ring: #6366f1;
+
+  /* Semantic feedback (bg tint / fg text / solid) */
+  --color-success-bg: #dcfce7;
+  --color-success-fg: #166534;
+  --color-success-solid: #16a34a;
+  --color-warning-bg: #fef3c7;
+  --color-warning-fg: #b45309;
+  --color-warning-solid: #f59e0b;
+  --color-danger-bg: #fee2e2;
+  --color-danger-fg: #991b1b;
+  --color-danger-solid: #dc2626;
+  --color-info-bg: #e0f2fe;
+  --color-info-fg: #075985;
+  --color-info-solid: #0284c7;
+
+  /* Typography — Inter (self-hosted via next/font, see app/layout.tsx) */
+  --font-sans: var(--font-inter), Inter, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Shadow — brand-exact values (radius uses Tailwind's stock rounded-md/lg/full
+     scale, which already matches lib/brand/tokens.ts `radius` 1:1 — no override
+     needed there). */
+  --shadow-sm: 0 1px 2px 0 rgba(17, 24, 39, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(17, 24, 39, 0.08), 0 2px 4px -2px rgba(17, 24, 39, 0.06);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* The app is a light-only design (hardcoded bg-white / gray classes). We do NOT
-   flip to a dark palette on prefers-color-scheme: dark — doing so turned body
-   text near-white while inputs stayed white, making typed text invisible. */
+/* The app is intentionally light-only in V1 — flipping to a dark palette on
+   prefers-color-scheme previously broke input-text contrast. lib/brand/tokens.ts
+   ships a complete darkTheme for a future token swap; no dark-mode CSS here. */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
 }

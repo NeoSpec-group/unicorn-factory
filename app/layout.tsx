@@ -2,16 +2,17 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import UserNav from '@/components/UserNav';
+import { product } from '@/lib/brand';
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
-  title: 'Unicorn Factory',
-  description:
-    'Turn your idea into a working MVP in 72 hours. Refine your idea free, we engineer your MVP, then hand it over — or run it for you.',
+  title: product.name,
+  description: product.metaDescription,
 };
 
 export default function RootLayout({
@@ -20,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full bg-gray-50 text-gray-900">
+    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-full">
         <UserNav />
         {children}
       </body>

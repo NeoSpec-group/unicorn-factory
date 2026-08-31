@@ -10,7 +10,7 @@ export default function ErrorBanner({ message }: ErrorBannerProps) {
   return (
     <div
       role="alert"
-      className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"
+      className="rounded-md bg-[var(--color-danger-bg)] border border-[var(--color-danger-fg)]/20 px-4 py-3 text-sm text-[var(--color-danger-fg)]"
     >
       {message}
     </div>

@@ -11,6 +11,7 @@ import WorkshopStage from '@/components/stages/WorkshopStage';
 import BlueprintStage from '@/components/stages/BlueprintStage';
 import JourneyStage from '@/components/stages/JourneyStage';
 import HandoverStage from '@/components/stages/HandoverStage';
+import { Wordmark } from '@/lib/brand';
 
 // Single canonical URL per idea. The stage shown is driven entirely by the
 // project's server-verified status — there are no per-stage URLs to navigate to,
@@ -21,12 +22,17 @@ export default function ProjectPage() {
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch(`/api/projects/${id}`);
+      if (res.status === 404) {
+        setNotFound(true);
+        return;
+      }
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         setError(body.error ?? 'Failed to load this idea.');
         return;
       }
@@ -51,16 +57,32 @@ export default function ProjectPage() {
     );
   }
 
+  if (notFound) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-foreground">We couldn&apos;t find this idea</h1>
+          <p className="mt-2 text-sm text-foreground-muted">
+            It may have been removed, or it belongs to a different account.
+          </p>
+          <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+            ← Back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const s = project?.status;
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-16">
+    <div className="min-h-screen bg-background px-4 py-16">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-indigo-600">
-            Unicorn Factory
+          <Link href="/">
+            <Wordmark />
           </Link>
-          <Link href="/dashboard" className="text-sm text-indigo-600 hover:underline">
+          <Link href="/dashboard" className="text-sm text-primary hover:underline">
             ← Dashboard
           </Link>
         </div>

@@ -71,8 +71,8 @@ export default function ProgressTracker({
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-        {subtitle && <p className="mt-1 text-gray-500">{subtitle}</p>}
+        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+        {subtitle && <p className="mt-1 text-foreground-muted">{subtitle}</p>}
       </div>
 
       <div className="space-y-4">
@@ -81,7 +81,7 @@ export default function ProgressTracker({
           return (
             <div
               key={index}
-              className="flex items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm"
             >
               <StepIcon status={status} />
               <div className="flex-1 min-w-0">
@@ -89,16 +89,16 @@ export default function ProgressTracker({
                   className={[
                     'text-sm font-medium truncate',
                     status === 'complete'
-                      ? 'text-gray-900'
+                      ? 'text-foreground'
                       : status === 'running'
-                      ? 'text-indigo-700'
-                      : 'text-gray-400',
+                      ? 'text-primary-hover'
+                      : 'text-foreground-muted',
                   ].join(' ')}
                 >
                   {step.name}
                 </p>
               </div>
-              <span className="text-xs text-gray-400 shrink-0">
+              <span className="text-xs text-foreground-muted shrink-0">
                 {formatDuration(step.durationMs)}
               </span>
             </div>
@@ -112,9 +112,9 @@ export default function ProgressTracker({
 function StepIcon({ status }: { status: StepStatus }) {
   if (status === 'complete') {
     return (
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-100">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-success-bg)]">
         <svg
-          className="h-4 w-4 text-green-600"
+          className="h-4 w-4 text-[var(--color-success-fg)]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -128,16 +128,16 @@ function StepIcon({ status }: { status: StepStatus }) {
 
   if (status === 'running') {
     return (
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-indigo-600" />
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
       </div>
     );
   }
 
   // pending
   return (
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-100">
-      <div className="h-2 w-2 rounded-full bg-gray-300" />
+    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-muted">
+      <div className="h-2 w-2 rounded-full bg-border-strong" />
     </div>
   );
 }

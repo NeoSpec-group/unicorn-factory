@@ -10,6 +10,8 @@ import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
 import Spinner from '@/components/ui/Spinner';
 import ErrorBanner from '@/components/ui/ErrorBanner';
+import StageChip, { STAGE_CHIP_LABEL } from '@/components/StageChip';
+import { Wordmark } from '@/lib/brand';
 
 const TOTAL_STAGES = JOURNEY_STAGES.length;
 
@@ -25,7 +27,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/portfolios');
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         setError(body.error ?? 'Failed to load your portfolios.');
         return;
       }
@@ -54,7 +56,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ name: newName.trim() }),
       });
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         setError(body.error ?? 'Failed to create portfolio.');
         return;
       }
@@ -75,37 +77,74 @@ export default function DashboardPage() {
     );
   }
 
+  const hasPortfolios = portfolios.length > 0;
+
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-12">
+    <div className="min-h-screen bg-background px-4 py-12">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-indigo-600">
-            Unicorn Factory
+          <Link href="/">
+            <Wordmark className="text-xl" />
           </Link>
         </div>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Your portfolios</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Your portfolios</h1>
+          <p className="mt-1 text-sm text-foreground-muted">
             Group your product ideas into portfolios and track each idea&apos;s progress.
           </p>
         </div>
 
-        <ErrorBanner message={error} />
+        {error && (
+          <div className="mb-6">
+            <ErrorBanner message={error} />
+          </div>
+        )}
 
         {/* New portfolio */}
-        <Card className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input value={newName} onChange={setNewName} placeholder="New portfolio name (e.g. EdTech bets)" />
-          <Button variant="primary" onClick={createPortfolio} disabled={creating || !newName.trim()} className="py-2 shrink-0">
-            {creating ? 'Creating…' : 'New portfolio'}
-          </Button>
+        <Card className="mb-8">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-foreground-muted">Portfolio name</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                value={newName}
+                onChange={setNewName}
+                placeholder="New portfolio name (e.g. EdTech bets)"
+                className="flex-1"
+              />
+              <Button
+                variant="primary"
+                onClick={createPortfolio}
+                disabled={creating || !newName.trim()}
+                className="py-2 shrink-0"
+              >
+                {creating ? 'Creating…' : 'New portfolio'}
+              </Button>
+            </div>
+          </label>
         </Card>
 
-        <div className="space-y-6">
-          {portfolios.map((pf) => (
-            <PortfolioBlock key={pf.id} portfolio={pf} onNewIdea={() => router.push(`/intake?portfolio=${pf.id}`)} onOpenIdea={(id) => router.push(`/projects/${id}`)} />
-          ))}
-        </div>
+        {!hasPortfolios ? (
+          <Card className="flex flex-col items-center gap-2 py-10 text-center">
+            <Wordmark className="mb-2 justify-center text-lg opacity-70" />
+            <p className="text-sm font-medium text-foreground">Create your first portfolio to start an idea.</p>
+            <p className="max-w-sm text-sm text-foreground-muted">
+              Portfolios group your product ideas — use the field above to create one, then add your first
+              idea to it.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {portfolios.map((pf) => (
+              <PortfolioBlock
+                key={pf.id}
+                portfolio={pf}
+                onNewIdea={() => router.push(`/intake?portfolio=${pf.id}`)}
+                onOpenIdea={(id) => router.push(`/projects/${id}`)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -123,14 +162,17 @@ function PortfolioBlock({
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">{portfolio.name}</h2>
-        <button onClick={onNewIdea} className="text-sm font-medium text-indigo-600 hover:underline">
+        <h2 className="text-base font-semibold text-foreground">{portfolio.name}</h2>
+        <button
+          onClick={onNewIdea}
+          className="rounded text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           + New idea
         </button>
       </div>
 
       {portfolio.ideas.length === 0 ? (
-        <p className="text-sm text-gray-400">No ideas yet. Start one with “New idea”.</p>
+        <p className="text-sm text-foreground-muted">No ideas yet. Start one with &ldquo;New idea&rdquo;.</p>
       ) : (
         <ul className="space-y-2">
           {portfolio.ideas.map((idea) => (
@@ -144,20 +186,27 @@ function PortfolioBlock({
 
 function IdeaRow({ idea, onOpen }: { idea: IdeaSummary; onOpen: () => void }) {
   const pct = Math.round(((idea.stageIndex + 1) / TOTAL_STAGES) * 100);
+  const humanStage = STAGE_CHIP_LABEL[idea.status] ?? idea.stageLabel;
   return (
     <li>
       <button
         onClick={onOpen}
-        className="w-full rounded-lg border border-gray-200 px-4 py-3 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/40"
+        aria-label={`Open ${idea.title} — ${humanStage}`}
+        className="w-full rounded-lg border border-border px-4 py-3 text-left transition-colors duration-150 hover:border-primary hover:bg-primary-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <div className="flex items-center justify-between gap-3">
-          <span className="min-w-0 flex-1 truncate text-sm text-gray-800">{idea.title}</span>
-          <span className="shrink-0 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
-            {idea.stageLabel}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-sm text-foreground">{idea.title}</span>
+          <StageChip status={idea.status} />
         </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-          <div className="h-full rounded-full bg-indigo-500" style={{ width: `${pct}%` }} />
+        <div
+          className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted"
+          role="progressbar"
+          aria-valuenow={idea.stageIndex + 1}
+          aria-valuemin={1}
+          aria-valuemax={TOTAL_STAGES}
+          aria-label={`${humanStage} progress`}
+        >
+          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
         </div>
       </button>
     </li>

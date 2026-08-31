@@ -49,21 +49,23 @@ export default function JourneyTracker({ status, activeStageIndex, className }: 
                 className={[
                   'mt-2 text-[11px] font-medium leading-tight',
                   state === 'active'
-                    ? 'text-indigo-700'
+                    ? 'text-primary-hover'
                     : state === 'stopped'
-                    ? 'text-amber-700'
+                    ? 'text-[var(--color-warning-fg)]'
                     : state === 'done'
-                    ? 'text-gray-700'
-                    : 'text-gray-400',
+                    ? 'text-foreground'
+                    : 'text-foreground-muted/70',
                 ].join(' ')}
               >
                 {stage.label}
               </span>
               {state === 'active' && (
-                <span className="mt-0.5 text-[10px] text-gray-400 leading-tight">{stage.blurb}</span>
+                <span className="mt-0.5 text-[10px] leading-tight text-foreground-muted">{stage.blurb}</span>
               )}
               {state === 'stopped' && offPathLabel && (
-                <span className="mt-0.5 text-[10px] text-amber-600 leading-tight">{offPathLabel}</span>
+                <span className="mt-0.5 text-[10px] leading-tight text-[var(--color-warning-fg)]">
+                  {offPathLabel}
+                </span>
               )}
             </li>
           );
@@ -77,7 +79,9 @@ function Node({ state, index }: { state: NodeState; index: number }) {
   const base = 'flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ring-1';
   if (state === 'done') {
     return (
-      <div className={`${base} bg-green-100 text-green-700 ring-green-200`}>
+      <div
+        className={`${base} bg-[var(--color-success-bg)] text-[var(--color-success-fg)] ring-[var(--color-success-fg)]/20`}
+      >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
@@ -85,12 +89,14 @@ function Node({ state, index }: { state: NodeState; index: number }) {
     );
   }
   if (state === 'active') {
-    return (
-      <div className={`${base} bg-indigo-600 text-white ring-indigo-600 shadow-sm`}>{index + 1}</div>
-    );
+    return <div className={`${base} bg-primary text-white ring-primary shadow-sm`}>{index + 1}</div>;
   }
   if (state === 'stopped') {
-    return <div className={`${base} bg-amber-100 text-amber-700 ring-amber-300`}>!</div>;
+    return (
+      <div className={`${base} bg-accent-soft text-[var(--color-warning-fg)] ring-[var(--color-warning-fg)]/30`}>
+        !
+      </div>
+    );
   }
-  return <div className={`${base} bg-gray-100 text-gray-400 ring-gray-200`}>{index + 1}</div>;
+  return <div className={`${base} bg-surface-muted text-foreground-muted ring-border`}>{index + 1}</div>;
 }
