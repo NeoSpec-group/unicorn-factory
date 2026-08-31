@@ -6,9 +6,11 @@ interface BadgeProps {
 }
 
 const variantClasses: Record<BadgeProps['variant'], string> = {
-  success: 'bg-green-100 text-green-800 border border-green-200',
-  danger: 'bg-red-100 text-red-800 border border-red-200',
-  neutral: 'bg-gray-100 text-gray-700 border border-gray-200',
+  success:
+    'bg-[var(--color-success-bg)] text-[var(--color-success-fg)] border border-[var(--color-success-fg)]/20',
+  danger:
+    'bg-[var(--color-danger-bg)] text-[var(--color-danger-fg)] border border-[var(--color-danger-fg)]/20',
+  neutral: 'bg-surface-muted text-foreground-muted border border-border',
 };
 
 export default function Badge({ label, variant }: BadgeProps) {

@@ -10,10 +10,7 @@ interface CardProps {
 export default function Card({ children, className = '' }: CardProps) {
   return (
     <div
-      className={[
-        'bg-white rounded-lg shadow-sm border border-gray-200 p-6',
-        className,
-      ]
+      className={['bg-surface rounded-lg shadow-sm border border-border p-6', className]
         .filter(Boolean)
         .join(' ')}
     >

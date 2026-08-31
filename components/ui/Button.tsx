@@ -12,12 +12,10 @@ interface ButtonProps {
 }
 
 const variantClasses: Record<ButtonProps['variant'], string> = {
-  primary:
-    'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 disabled:bg-indigo-300',
+  primary: 'bg-primary text-white hover:bg-primary-hover disabled:opacity-50',
   secondary:
-    'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-gray-400 disabled:opacity-50',
-  destructive:
-    'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-300',
+    'bg-surface text-foreground border border-border-strong hover:bg-surface-muted disabled:opacity-50',
+  destructive: 'bg-[var(--color-danger-solid)] text-white hover:opacity-90 disabled:opacity-50',
 };
 
 export default function Button({
@@ -35,7 +33,8 @@ export default function Button({
       disabled={disabled}
       className={[
         'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-150',
+        'transition-colors duration-150',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed',
         variantClasses[variant],
         className,

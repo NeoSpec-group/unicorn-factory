@@ -38,7 +38,7 @@ export default function BlueprintStage({ project, reload }: StageProps) {
         body: JSON.stringify({}),
       });
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         setError(body.error ?? 'Something went wrong. Please try again.');
         return;
       }
@@ -58,6 +58,10 @@ export default function BlueprintStage({ project, reload }: StageProps) {
     const margin = 48;
     const width = doc.internal.pageSize.getWidth() - margin * 2;
     let y = margin;
+    // jsPDF draws to a canvas-like surface and cannot consume CSS custom
+    // properties — these RGB tuples mirror lib/brand/tokens.ts `primary[600]`
+    // (#4f46e5), `lightTheme.foreground` (#111827), and `lightTheme.foregroundMuted`
+    // (#6b7280) 1:1; keep in sync with that module if the brand palette changes.
     const INDIGO: [number, number, number] = [79, 70, 229];
     const DARK: [number, number, number] = [17, 24, 39];
     const GRAY: [number, number, number] = [107, 114, 128];
@@ -118,42 +122,55 @@ export default function BlueprintStage({ project, reload }: StageProps) {
     return (
       <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Commission the build</h1>
-          <p className="mt-1 text-sm text-gray-500">Nothing is charged yet — we review first.</p>
+          <h1 className="text-2xl font-bold text-foreground">Commission the build</h1>
+          <p className="mt-1 text-sm text-foreground-muted">Nothing is charged yet — we review first.</p>
         </div>
         <ErrorBanner message={error} />
         <div className="space-y-6">
           <Card className="flex flex-col gap-2">
-            <p className="text-xs uppercase tracking-wide text-gray-500">
+            <p className="text-xs uppercase tracking-wide text-foreground-muted">
               Estimated {band ? band.label : ''} build
             </p>
-            <p className="text-2xl font-bold text-gray-900">
+            <p className="text-2xl font-bold text-foreground">
               {money(estimate.low)}
-              <span className="text-gray-400"> – </span>
+              <span className="text-foreground-muted"> – </span>
               {money(estimate.high)}
             </p>
-            <p className="text-xs text-gray-500">Cash. A firm price is set at Green-Light before you pay.</p>
+            <p className="text-xs text-foreground-muted">
+              Cash. A firm price is set at Green-Light before you pay.
+            </p>
           </Card>
           <Card>
-            <h2 className="text-sm font-semibold text-gray-900 mb-3">What happens next</h2>
-            <ol className="space-y-2 text-sm text-gray-600 list-decimal list-inside">
-              <li><strong>Green-Light</strong> — we review scope &amp; set your firm price.</li>
-              <li><strong>Ignition</strong> — you pay the firm price; the 72-hour clock starts.</li>
-              <li><strong>The Forge</strong> — we build your MVP.</li>
-              <li><strong>Proving Ground → Handover</strong> — you test-drive it, then it&apos;s yours.</li>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">What happens next</h2>
+            <ol className="list-inside list-decimal space-y-2 text-sm text-foreground-muted">
+              <li>
+                <strong className="text-foreground">Green-Light</strong> — we review scope &amp; set your
+                firm price.
+              </li>
+              <li>
+                <strong className="text-foreground">Ignition</strong> — you pay the firm price; the 72-hour
+                clock starts.
+              </li>
+              <li>
+                <strong className="text-foreground">The Forge</strong> — we build your MVP.
+              </li>
+              <li>
+                <strong className="text-foreground">Proving Ground → Handover</strong> — you test-drive it,
+                then it&apos;s yours.
+              </li>
             </ol>
           </Card>
-          <label className="flex items-start gap-3 text-sm text-gray-700">
+          <label className="flex items-start gap-3 text-sm text-foreground-muted">
             <input
               type="checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600"
+              className="mt-0.5 h-4 w-4 rounded border-border-strong text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <span>I understand this submits my build request for review. I&apos;m not charged until Ignition.</span>
           </label>
           <div className="flex gap-3">
-            <Button variant="primary" onClick={() => act('commission')} disabled={busy || !agreed} className="py-3 flex-1">
+            <Button variant="primary" onClick={() => act('commission')} disabled={busy || !agreed} className="flex-1 py-3">
               {busy ? 'Submitting…' : 'Submit build request'}
             </Button>
             <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy} className="py-3">
@@ -168,36 +185,36 @@ export default function BlueprintStage({ project, reload }: StageProps) {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Your Blueprint</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Your Blueprint</h1>
+        <p className="mt-1 text-sm text-foreground-muted">
           A validated shape of your idea, a build roadmap, and an estimate — free.
         </p>
       </div>
 
       <ErrorBanner message={error} />
 
-      <div className="space-y-6 mt-4">
+      <div className="mt-4 space-y-6">
         {blueprint && (
           <Card>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Refined idea</h2>
+            <h2 className="mb-3 text-base font-semibold text-foreground">Refined idea</h2>
             <MarkdownRenderer content={blueprint.refinedIdea} />
           </Card>
         )}
 
         {blueprint?.targetUsers && blueprint.targetUsers !== 'Not specified.' && (
           <Card>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Who it&apos;s for</h2>
-            <p className="text-sm text-gray-700 leading-relaxed">{blueprint.targetUsers}</p>
+            <h2 className="mb-2 text-base font-semibold text-foreground">Who it&apos;s for</h2>
+            <p className="text-sm leading-relaxed text-foreground-muted">{blueprint.targetUsers}</p>
           </Card>
         )}
 
         {blueprint && blueprint.keyFeatures.length > 0 && (
           <Card>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">What we&apos;ll build</h2>
+            <h2 className="mb-3 text-base font-semibold text-foreground">What we&apos;ll build</h2>
             <ul className="space-y-2">
               {blueprint.keyFeatures.map((f, i) => (
-                <li key={i} className="flex gap-2 text-sm text-gray-700">
-                  <span className="mt-0.5 text-indigo-500">✓</span>
+                <li key={i} className="flex gap-2 text-sm text-foreground-muted">
+                  <span className="mt-0.5 text-primary">✓</span>
                   <span>{f}</span>
                 </li>
               ))}
@@ -207,16 +224,16 @@ export default function BlueprintStage({ project, reload }: StageProps) {
 
         {blueprint && blueprint.roadmap.length > 0 && (
           <Card>
-            <h2 className="text-base font-semibold text-gray-900 mb-3">Roadmap</h2>
+            <h2 className="mb-3 text-base font-semibold text-foreground">Roadmap</h2>
             <ol className="space-y-3">
               {blueprint.roadmap.map((item, i) => (
                 <li key={i} className="flex gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-700">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary-hover">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                    <p className="text-sm text-gray-600">{item.detail}</p>
+                    <p className="text-sm font-medium text-foreground">{item.title}</p>
+                    <p className="text-sm text-foreground-muted">{item.detail}</p>
                   </div>
                 </li>
               ))}
@@ -224,24 +241,33 @@ export default function BlueprintStage({ project, reload }: StageProps) {
           </Card>
         )}
 
+        {!blueprint && (
+          <Card>
+            <p className="text-sm text-foreground-muted">
+              Your written Blueprint is still being finalized — the estimate below is authoritative and you
+              can commission the build now.
+            </p>
+          </Card>
+        )}
+
         <Card className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold text-gray-900">Estimate</h2>
+            <h2 className="text-base font-semibold text-foreground">Estimate</h2>
             {band && <Badge label={band.label} variant="neutral" />}
           </div>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-foreground">
             {money(estimate.low)}
-            <span className="text-gray-400"> – </span>
+            <span className="text-foreground-muted"> – </span>
             {money(estimate.high)}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-foreground-muted">
             A range, not a bill. We confirm a firm price at the internal Green-Light review before you pay
             anything.
           </p>
         </Card>
 
         <div className="flex flex-col gap-3 pt-2">
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Button variant="primary" onClick={() => setConfirming(true)} disabled={busy} className="flex-1 py-3">
               Commission the build
             </Button>
@@ -249,7 +275,10 @@ export default function BlueprintStage({ project, reload }: StageProps) {
               Park for now
             </Button>
           </div>
-          <button onClick={downloadBlueprint} className="text-xs text-indigo-600 hover:underline self-center">
+          <button
+            onClick={downloadBlueprint}
+            className="self-center rounded text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
             Download this Blueprint as PDF (free)
           </button>
         </div>
