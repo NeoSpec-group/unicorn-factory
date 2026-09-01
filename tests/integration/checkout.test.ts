@@ -39,14 +39,15 @@ describe('POST /api/projects/[id]/checkout', () => {
     expect(res.status).toBe(404);
   });
 
-  it('403s for a non-owner', async () => {
+  it('404s for a non-owner (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else', status: 'approved', firm_price: 5000 });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await checkout(
       makeRequest(`/api/projects/${project.id}/checkout`, { method: 'POST' }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when status is not approved', async () => {
