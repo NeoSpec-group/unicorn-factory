@@ -455,6 +455,16 @@ describe('POST /api/projects/[id]/park', () => {
     expect(res.status).toBe(401);
   });
 
+  it('403s for a non-owner', async () => {
+    const project = makeProject({ user_id: 'someone-else', status: 'blueprint_ready' });
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    const res = await park(
+      makeRequest(`/api/projects/${project.id}/park`, { method: 'POST' }),
+      routeParams(project.id),
+    );
+    expect(res.status).toBe(403);
+  });
+
   it('409s when not in blueprint_ready', async () => {
     const user = makeUser();
     const project = makeProject({ user_id: user.id, status: 'commissioned' });
@@ -551,6 +561,16 @@ describe('POST /api/projects/[id]/report-issue', () => {
     expect(res.status).toBe(400);
   });
 
+  it('403s for a non-owner', async () => {
+    const project = makeProject({ user_id: 'someone-else', status: 'uat' });
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    const res = await reportIssue(
+      makeRequest(`/api/projects/${project.id}/report-issue`, { method: 'POST', body: { note: 'broken' } }),
+      routeParams(project.id),
+    );
+    expect(res.status).toBe(403);
+  });
+
   it('409s when not in uat', async () => {
     const user = makeUser();
     const project = makeProject({ user_id: user.id, status: 'handover' });
@@ -595,6 +615,16 @@ describe('POST /api/projects/[id]/finish', () => {
       routeParams('p1'),
     );
     expect(res.status).toBe(400);
+  });
+
+  it('403s for a non-owner', async () => {
+    const project = makeProject({ user_id: 'someone-else', status: 'handover' });
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    const res = await finish(
+      makeRequest(`/api/projects/${project.id}/finish`, { method: 'POST', body: { choice: 'launch' } }),
+      routeParams(project.id),
+    );
+    expect(res.status).toBe(403);
   });
 
   it('409s when not in handover', async () => {
