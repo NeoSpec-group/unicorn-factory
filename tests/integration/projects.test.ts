@@ -264,14 +264,15 @@ describe('POST /api/projects/[id]/submit-answers', () => {
     expect(res.status).toBe(404);
   });
 
-  it('403s when the project belongs to a different user', async () => {
+  it('404s when the project belongs to a different user (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await submitAnswers(
       makeRequest(`/api/projects/${project.id}/submit-answers`, { method: 'POST', body: validAnswers }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when the project status is not intake', async () => {
@@ -358,11 +359,12 @@ describe('GET /api/projects/[id]/questions', () => {
     expect(res.status).toBe(404);
   });
 
-  it('403s when the project belongs to a different user', async () => {
+  it('404s when the project belongs to a different user (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await getQuestions(makeRequest(`/api/projects/${project.id}/questions`), routeParams(project.id));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('200s with cached questions when already generated', async () => {
@@ -411,14 +413,15 @@ describe('POST /api/projects/[id]/commission', () => {
     expect(res.status).toBe(404);
   });
 
-  it('403s for a non-owner', async () => {
+  it('404s for a non-owner (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else', status: 'blueprint_ready' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await commission(
       makeRequest(`/api/projects/${project.id}/commission`, { method: 'POST' }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when not in blueprint_ready', async () => {
@@ -455,14 +458,15 @@ describe('POST /api/projects/[id]/park', () => {
     expect(res.status).toBe(401);
   });
 
-  it('403s for a non-owner', async () => {
+  it('404s for a non-owner (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else', status: 'blueprint_ready' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await park(
       makeRequest(`/api/projects/${project.id}/park`, { method: 'POST' }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when not in blueprint_ready', async () => {
@@ -499,14 +503,15 @@ describe('POST /api/projects/[id]/accept', () => {
     expect(res.status).toBe(401);
   });
 
-  it('403s for a non-owner', async () => {
+  it('404s for a non-owner (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else', status: 'uat' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await accept(
       makeRequest(`/api/projects/${project.id}/accept`, { method: 'POST' }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when not in uat', async () => {
@@ -561,14 +566,15 @@ describe('POST /api/projects/[id]/report-issue', () => {
     expect(res.status).toBe(400);
   });
 
-  it('403s for a non-owner', async () => {
+  it('404s for a non-owner (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else', status: 'uat' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await reportIssue(
       makeRequest(`/api/projects/${project.id}/report-issue`, { method: 'POST', body: { note: 'broken' } }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when not in uat', async () => {
@@ -617,14 +623,15 @@ describe('POST /api/projects/[id]/finish', () => {
     expect(res.status).toBe(400);
   });
 
-  it('403s for a non-owner', async () => {
+  it('404s for a non-owner (RLS masks the row before the ownership check)', async () => {
     const project = makeProject({ user_id: 'someone-else', status: 'handover' });
-    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(project)] } });
+    // RLS-scoped client returns zero rows for a non-owner, not the mismatched-owner row.
+    setClient({ auth: authedUser(makeUser()), from: { projects: [ok(null)] } });
     const res = await finish(
       makeRequest(`/api/projects/${project.id}/finish`, { method: 'POST', body: { choice: 'launch' } }),
       routeParams(project.id),
     );
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it('409s when not in handover', async () => {
