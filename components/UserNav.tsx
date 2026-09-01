@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { nav } from '@/lib/brand';
 
 /**
  * Persistent account chip (fixed top-right). Shows the signed-in email and a
@@ -40,10 +41,13 @@ export default function UserNav() {
   if (!email) return null;
 
   return (
-    <div className="fixed right-3 top-3 z-50 flex items-center gap-2 rounded-full border border-gray-200 bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur">
-      <span className="max-w-[160px] truncate text-xs text-gray-600">{email}</span>
-      <button onClick={signOut} className="text-xs font-medium text-indigo-600 hover:underline">
-        Sign out
+    <div className="fixed right-3 top-3 z-50 flex items-center gap-2 rounded-full border border-border bg-surface/90 px-3 py-1.5 shadow-sm backdrop-blur">
+      <span className="max-w-[160px] truncate text-xs text-foreground-muted">{email}</span>
+      <button
+        onClick={signOut}
+        className="rounded text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        {nav.signOut}
       </button>
     </div>
   );

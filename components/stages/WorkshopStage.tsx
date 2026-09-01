@@ -25,7 +25,7 @@ export default function WorkshopStage({ project, reload }: StageProps) {
       try {
         const res = await fetch(`/api/projects/${project.id}/questions`);
         if (!res.ok) {
-          const body = (await res.json()) as { error?: string };
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
           setError(body.error ?? 'Failed to load questions.');
           return;
         }
@@ -55,7 +55,7 @@ export default function WorkshopStage({ project, reload }: StageProps) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
         setError(body.error ?? 'Failed to submit answers.');
         return;
       }
@@ -70,9 +70,9 @@ export default function WorkshopStage({ project, reload }: StageProps) {
 
   if (loadingQuestions) {
     return (
-      <div className="text-center py-10">
+      <div className="py-10 text-center">
         <Spinner size="lg" />
-        <p className="mt-3 text-sm text-gray-500">Generating questions…</p>
+        <p className="mt-3 text-sm text-foreground-muted">Generating questions…</p>
       </div>
     );
   }
@@ -80,8 +80,8 @@ export default function WorkshopStage({ project, reload }: StageProps) {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">The Workshop</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">The Workshop</h1>
+        <p className="mt-1 text-sm text-foreground-muted">
           Let&apos;s shape your idea together — a few quick questions.
         </p>
       </div>
@@ -89,24 +89,26 @@ export default function WorkshopStage({ project, reload }: StageProps) {
       <ErrorBanner message={error} />
 
       {questions.length > 0 && (
-        <div className="space-y-4 mt-4">
+        <div className="mt-4 space-y-4">
           {questions.map((question, index) => (
             <Card key={index}>
-              <label className="block text-sm font-medium text-gray-800 mb-2">
-                {index + 1}. {question}
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-foreground">
+                  {index + 1}. {question}
+                </span>
+                <Input
+                  value={answers[index] ?? ''}
+                  onChange={(value) =>
+                    setAnswers((prev) => {
+                      const next = [...prev];
+                      next[index] = value;
+                      return next;
+                    })
+                  }
+                  placeholder="Your answer…"
+                  disabled={submitting}
+                />
               </label>
-              <Input
-                value={answers[index] ?? ''}
-                onChange={(value) =>
-                  setAnswers((prev) => {
-                    const next = [...prev];
-                    next[index] = value;
-                    return next;
-                  })
-                }
-                placeholder="Your answer…"
-                disabled={submitting}
-              />
             </Card>
           ))}
 
@@ -114,10 +116,10 @@ export default function WorkshopStage({ project, reload }: StageProps) {
             variant="primary"
             onClick={handleSubmit}
             disabled={!allAnswered || submitting}
-            className="w-full py-2.5 mt-2"
+            className="mt-2 w-full py-2.5"
           >
             {submitting ? (
-              <span className="flex items-center gap-2 justify-center">
+              <span className="flex items-center justify-center gap-2">
                 <Spinner size="sm" />
                 Building your Blueprint…
               </span>

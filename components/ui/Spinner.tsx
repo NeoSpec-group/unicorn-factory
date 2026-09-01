@@ -16,7 +16,7 @@ export default function Spinner({ size = 'md' }: SpinnerProps) {
       role="status"
       aria-label="Loading"
       className={[
-        'animate-spin rounded-full border-gray-200 border-t-indigo-600',
+        'animate-spin rounded-full border-border border-t-primary motion-reduce:animate-[spin_1.5s_linear_infinite]',
         sizeClasses[size],
       ].join(' ')}
     />
