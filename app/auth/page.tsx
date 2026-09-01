@@ -138,6 +138,9 @@ export default function AuthPage() {
         </div>
 
         <div className="rounded-lg border border-border bg-surface p-8 shadow-sm">
+          <h1 className="mb-4 text-2xl font-bold text-foreground">
+            {activeTab === 'sign-up' ? 'Create your account' : 'Welcome back'}
+          </h1>
           <div role="tablist" aria-label="Auth mode" className="mb-6 flex rounded-lg bg-surface-muted p-1">
             {(['sign-up', 'sign-in'] as Tab[]).map((tab) => (
               <button
